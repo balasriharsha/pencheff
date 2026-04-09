@@ -1,0 +1,25 @@
+{
+  "name": "pencheff",
+  "version": "0.1.0",
+  "description": "AI penetration testing agent that performs comprehensive end-to-end security assessments. Covers OWASP Top 10, API security, authentication/authorization testing, injection attacks, cloud misconfigurations, and generates compliance-mapped reports.",
+  "author": {
+    "name": "Bala Sriharsha",
+    "url": "https://github.com/balasriharsha"
+  },
+  "homepage": "https://github.com/balasriharsha/pencheff",
+  "keywords": [
+    "security",
+    "penetration-testing",
+    "pentest",
+    "vulnerability",
+    "owasp",
+    "sqli",
+    "xss",
+    "ssrf",
+    "api-security",
+    "web-security",
+    "jwt",
+    "cors",
+    "cloud-security"
+  ]
+}
