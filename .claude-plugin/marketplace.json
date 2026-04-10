@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "pencheff",
   "version": "0.1.0",
-  "description": "Pencheff — AI-powered penetration testing agent for Claude Code",
+  "description": "Pencheff — the world's best AI ethical hacker, an elite penetration testing agent for Claude Code",
   "owner": {
     "name": "Bala Sriharsha",
     "url": "https://github.com/balasriharsha/pencheff"
@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "pencheff",
-      "description": "AI penetration testing agent that performs comprehensive security assessments. Provide target URL and credentials — the agent handles reconnaissance, vulnerability scanning, exploitation verification, and reporting.",
+      "description": "The world's best AI ethical hacker — an elite penetration testing agent that thinks adversarially, chains vulnerabilities creatively, and leaves no attack surface unexplored. Provide target URL and credentials — the agent orchestrates deep reconnaissance, advanced exploitation, attack chain verification, and professional reporting.",
       "version": "0.1.0",
       "author": {
         "name": "Bala Sriharsha",

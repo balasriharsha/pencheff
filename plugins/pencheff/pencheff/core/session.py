@@ -44,6 +44,12 @@ class DiscoveredState:
     api_specs: list[dict[str, Any]] = field(default_factory=list)
     completed_modules: list[str] = field(default_factory=list)
     running_module: str | None = None
+    # Advanced discovery state
+    websocket_endpoints: list[dict[str, Any]] = field(default_factory=list)
+    oauth_endpoints: list[dict[str, Any]] = field(default_factory=list)
+    waf_detected: dict[str, Any] = field(default_factory=dict)
+    exploit_chains: list[dict[str, Any]] = field(default_factory=list)
+    cname_records: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -81,6 +87,10 @@ class PentestSession:
             "findings": self.findings.summary(),
             "total_findings": self.findings.count,
             "total_requests": len(self.request_log),
+            "websocket_endpoints": len(self.discovered.websocket_endpoints),
+            "oauth_endpoints": len(self.discovered.oauth_endpoints),
+            "waf_detected": self.discovered.waf_detected or None,
+            "exploit_chains": len(self.discovered.exploit_chains),
         }
 
 

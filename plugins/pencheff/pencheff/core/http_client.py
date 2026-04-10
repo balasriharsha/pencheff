@@ -23,12 +23,14 @@ class PencheffHTTPClient:
         verify_ssl: bool = False,
         timeout: float = DEFAULT_REQUEST_TIMEOUT,
         max_rps: float = MAX_REQUESTS_PER_SECOND,
+        http2: bool = False,
     ):
         self.session = session
         self._cred_name = credential_set
         self._verify_ssl = verify_ssl
         self._timeout = timeout
         self._max_rps = max_rps
+        self._http2 = http2
         self._min_interval = 1.0 / max_rps if max_rps > 0 else 0
         self._last_request_time = 0.0
         self._client: httpx.AsyncClient | None = None
@@ -41,6 +43,7 @@ class PencheffHTTPClient:
                 follow_redirects=True,
                 max_redirects=5,
                 limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+                http2=self._http2,
             )
         return self._client
 
@@ -115,6 +118,84 @@ class PencheffHTTPClient:
 
     async def options(self, url: str, module: str = "unknown", **kwargs) -> httpx.Response:
         return await self.request("OPTIONS", url, module=module, **kwargs)
+
+    async def raw_request(
+        self,
+        host: str,
+        port: int,
+        raw_bytes: bytes,
+        module: str = "unknown",
+        timeout: float = 10.0,
+        use_tls: bool = False,
+    ) -> bytes:
+        """Send raw bytes over a TCP connection. Essential for HTTP smuggling
+        where malformed HTTP that httpx would refuse to construct is required."""
+        start = time.monotonic()
+        try:
+            if use_tls:
+                import ssl as _ssl
+                ctx = _ssl.create_default_context()
+                ctx.check_hostname = False
+                ctx.verify_mode = _ssl.CERT_NONE
+                reader, writer = await asyncio.wait_for(
+                    asyncio.open_connection(host, port, ssl=ctx),
+                    timeout=timeout,
+                )
+            else:
+                reader, writer = await asyncio.wait_for(
+                    asyncio.open_connection(host, port),
+                    timeout=timeout,
+                )
+            writer.write(raw_bytes)
+            await writer.drain()
+            response = await asyncio.wait_for(reader.read(65536), timeout=timeout)
+            writer.close()
+            duration_ms = (time.monotonic() - start) * 1000
+            self.session.log_request("RAW", f"{host}:{port}", None, module, duration_ms)
+            return response
+        except Exception:
+            duration_ms = (time.monotonic() - start) * 1000
+            self.session.log_request("RAW", f"{host}:{port}", None, module, duration_ms)
+            raise
+
+    async def websocket_connect(
+        self,
+        url: str,
+        headers: dict[str, str] | None = None,
+        module: str = "unknown",
+    ):
+        """Open a WebSocket connection. Returns a websockets connection object.
+        Requires the 'websockets' package."""
+        try:
+            import websockets
+        except ImportError:
+            raise ImportError(
+                "The 'websockets' package is required for WebSocket testing. "
+                "Install it with: pip install websockets"
+            )
+
+        extra_headers = headers or {}
+        extra_headers.setdefault("User-Agent", "Mozilla/5.0 (compatible; PencheffScanner/0.1)")
+
+        creds = self._get_creds()
+        if creds:
+            extra_headers = creds.inject_into_headers(extra_headers)
+
+        start = time.monotonic()
+        try:
+            ws = await websockets.connect(
+                url,
+                additional_headers=extra_headers,
+                close_timeout=self._timeout,
+                open_timeout=self._timeout,
+            )
+            duration_ms = (time.monotonic() - start) * 1000
+            self.session.log_request("WS_CONNECT", url, None, module, duration_ms)
+            return ws
+        except Exception:
+            duration_ms = (time.monotonic() - start) * 1000
+            self.session.log_request("WS_CONNECT", url, None, module, duration_ms)
+            raise
 
     async def close(self):
         if self._client:

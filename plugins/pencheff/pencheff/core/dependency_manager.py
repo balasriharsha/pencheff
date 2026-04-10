@@ -22,6 +22,8 @@ OPTIONAL_PYTHON = {
     "python-nmap": "nmap",
     "boto3": "boto3",
     "paramiko": "paramiko",
+    "websockets": "websockets",
+    "h2": "h2",
 }
 
 SYSTEM_TOOLS = {
@@ -36,6 +38,11 @@ SYSTEM_TOOLS = {
     "sqlmap": "SQL injection testing",
     "ffuf": "Web fuzzing",
     "nikto": "Web server scanning",
+    "subfinder": "Subdomain enumeration (ProjectDiscovery)",
+    "interactsh-client": "Out-of-band callback detection",
+    "httpx-toolkit": "HTTP probing (ProjectDiscovery)",
+    "dalfox": "XSS scanner",
+    "gau": "URL discovery from web archives",
 }
 
 

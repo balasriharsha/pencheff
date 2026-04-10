@@ -1,7 +1,7 @@
 {
   "name": "pencheff",
   "version": "0.1.0",
-  "description": "AI penetration testing agent that performs comprehensive end-to-end security assessments. Covers OWASP Top 10, API security, authentication/authorization testing, injection attacks, cloud misconfigurations, and generates compliance-mapped reports.",
+  "description": "The world's best AI ethical hacker — an elite penetration testing agent that thinks like a nation-state adversary. Performs exhaustive security assessments using advanced exploitation chains, creative bypass techniques, and deep business logic analysis. Covers OWASP Top 10, API security, authentication/authorization destruction, injection warfare, cloud exploitation, race conditions, and generates professional compliance-mapped reports with attack chain narratives.",
   "author": {
     "name": "Bala Sriharsha",
     "url": "https://github.com/balasriharsha"

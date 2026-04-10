@@ -50,6 +50,19 @@ PCI_DSS_MAP = {
     "misconfiguration": ["2.2", "6.2"],
     "ssrf": ["6.5.1"],
     "file_handling": ["6.5.1", "6.5.8"],
+    "deserialization": ["6.5.1"],
+    "smuggling": ["6.5.10"],
+    "cache_poisoning": ["6.5.10"],
+    "mfa_bypass": ["8.3"],
+    "oauth": ["6.5.10"],
+    "subdomain_takeover": ["6.5.8"],
+    "waf_bypass": ["6.6"],
+    "prototype_pollution": ["6.5.1"],
+    "ldap": ["6.5.1"],
+    "open_redirect": ["6.5.10"],
+    "header_injection": ["6.5.1"],
+    "websocket": ["6.5.10"],
+    "mass_assignment": ["6.5.1", "6.5.8"],
 }
 
 # NIST 800-53 mapping
@@ -62,6 +75,19 @@ NIST_MAP = {
     "misconfiguration": ["CM-6", "CM-7"],
     "ssrf": ["SI-10", "SC-7"],
     "logging": ["AU-2", "AU-3", "AU-6"],
+    "deserialization": ["SI-10", "SI-16"],
+    "smuggling": ["SC-7", "SI-10"],
+    "cache_poisoning": ["SC-7"],
+    "mfa_bypass": ["IA-2", "IA-11"],
+    "oauth": ["IA-2", "IA-8"],
+    "subdomain_takeover": ["CM-8", "SC-20"],
+    "waf_bypass": ["SC-7", "SI-4"],
+    "prototype_pollution": ["SI-10"],
+    "ldap": ["SI-10", "AC-3"],
+    "open_redirect": ["SI-10"],
+    "header_injection": ["SI-10", "SC-7"],
+    "websocket": ["SC-8", "SC-23"],
+    "mass_assignment": ["AC-3", "AC-6"],
 }
 
 # Default timeouts

