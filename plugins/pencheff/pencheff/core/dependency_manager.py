@@ -27,83 +27,189 @@ OPTIONAL_PYTHON = {
 }
 
 SYSTEM_TOOLS = {
-    # Core utilities
-    "dig": "DNS lookups",
-    "whois": "Domain registration info",
-    "openssl": "SSL/TLS testing",
-    "curl": "HTTP requests",
-    # Network scanning
-    "nmap": "Port scanning, service detection, NSE scripts, OS fingerprinting",
-    "masscan": "Ultra-fast port scanning (100K+ ports/sec)",
-    "naabu": "Fast port scanner (ProjectDiscovery)",
-    "unicornscan": "Asynchronous TCP/UDP scanner",
-    "netcat": "Network utility — port scanning, file transfer, reverse shells",
-    "hping3": "Packet crafting and analysis — firewall testing, idle scanning",
-    # Vulnerability scanning
-    "nuclei": "Template-based vulnerability scanning (10K+ templates)",
-    "nikto": "Web server scanner — 7000+ dangerous files, outdated software",
-    # SQL injection
-    "sqlmap": "SQL injection — automatic exploitation, data extraction, OS shell",
-    # XSS scanning
-    "dalfox": "XSS scanner with DOM analysis",
-    "xsstrike": "Advanced XSS detection and exploitation",
-    # Directory/path brute force
+    # ══════════════════════════════════════════════════════════════
+    # NETWORK SCANNING TOOLS (10)
+    # ══════════════════════════════════════════════════════════════
+    "nmap": "Port scanning, service detection, NSE scripts, OS fingerprinting — the #1 network scanner",
+    "ipscan": "Angry IP Scanner — fast IP address and port scanning with host info",
+    "zenmap": "Nmap GUI — visual interpretation of scan results",
+    "fping": "Fast ICMP ping to multiple hosts simultaneously for network diagnosis",
+    "unicornscan": "Asynchronous TCP/UDP scanner for large networks",
+    "netcat": "Network utility — port scanning, file transfer, reverse shells, banner grabbing",
+    "masscan": "Ultra-fast port scanning (100K+ ports/sec) — Internet-scale scanning",
+    "naabu": "Fast port scanner (ProjectDiscovery) — SYN/CONNECT scanning",
+    "nessus": "Tenable vulnerability scanner — comprehensive network security assessment",
+    "hping3": "Packet crafting and analysis — firewall testing, idle scanning, traceroute",
+
+    # ══════════════════════════════════════════════════════════════
+    # VULNERABILITY SCANNING TOOLS (7)
+    # ══════════════════════════════════════════════════════════════
+    "openvas": "Open Vulnerability Assessment Scanner — comprehensive security assessments",
+    "gvm-cli": "Greenbone Vulnerability Management CLI — OpenVAS command-line interface",
+    "nuclei": "Template-based vulnerability scanning (10K+ templates) — ProjectDiscovery",
+    "nikto": "Web server scanner — 7000+ dangerous files, outdated software, misconfigs",
+    "nessus": "Tenable Nessus — network vulnerability scanning with detailed reports",
+    "skipfish": "Web app security recon — generates interactive sitemap with security checks",
+    "vega": "Web vulnerability scanner — SQLi, XSS, sensitive data exposure",
+
+    # ══════════════════════════════════════════════════════════════
+    # PASSWORD CRACKING TOOLS (9)
+    # ══════════════════════════════════════════════════════════════
+    "john": "John the Ripper — password cracker supporting 100s of hash types",
+    "hashcat": "GPU-accelerated password recovery — 300+ hash types, world's fastest cracker",
+    "rcrack": "RainbowCrack — hash cracker using precomputed rainbow tables",
+    "aircrack-ng": "WiFi security suite — WEP/WPA/WPA2 cracking, packet capture, monitoring",
+    "hydra": "Network login brute-forcer — 50+ protocols (HTTP, SSH, FTP, MySQL, etc.)",
+    "medusa": "Parallel network login brute-forcer — fast credential testing",
+    "l0phtcrack": "Password auditing — dictionary, brute-force, rainbow table attacks",
+    "cowpatty": "WPA2-PSK brute-force cracking — weak passphrase detection",
+    "ophcrack": "Windows password cracker using rainbow tables",
+
+    # ══════════════════════════════════════════════════════════════
+    # EXPLOITATION TOOLS (10)
+    # ══════════════════════════════════════════════════════════════
+    "msfconsole": "Metasploit Framework — exploit development, post-exploitation, pivoting",
+    "msfvenom": "Metasploit payload generator — shellcode, executables, scripts",
+    "msfdb": "Metasploit database management",
+    "setoolkit": "Social-Engineer Toolkit — phishing, credential harvesting, SMS spoofing",
+    "beef-xss": "Browser Exploitation Framework — XSS attacks targeting browser sessions",
+    "sqlmap": "SQL injection — automatic exploitation, data extraction, OS shell access",
+    "armitage": "Graphical Metasploit frontend — target visualization, exploit recommendations",
+    "zap-cli": "OWASP ZAP CLI — automated web security scanning and testing",
+    "zaproxy": "OWASP Zed Attack Proxy — web app security scanner with add-ons",
+    "commix": "Command injection exploiter — automated OS command injection",
+
+    # ══════════════════════════════════════════════════════════════
+    # PACKET SNIFFING & SPOOFING TOOLS (9)
+    # ══════════════════════════════════════════════════════════════
+    "tshark": "Wireshark CLI — deep packet inspection of 100s of protocols",
+    "tcpdump": "Command-line packet analyzer — capture and filter network traffic",
+    "ettercap": "Man-in-the-middle attack suite — ARP spoofing, DNS spoofing, sniffing",
+    "bettercap": "Network attack Swiss Army knife — WiFi, BLE, Ethernet MitM attacks",
+    "snort": "Intrusion detection/prevention system — rule-based packet analysis",
+    "ngrep": "Network grep — pattern-matching packet analyzer across protocols",
+    "nemesis": "Packet crafting and injection — custom protocol packets, Layer 2 injection",
+    "scapy": "Interactive packet manipulation — craft, send, sniff, dissect packets",
+    "dsniff": "Password sniffer — network auditing and penetration testing",
+
+    # ══════════════════════════════════════════════════════════════
+    # WIRELESS HACKING TOOLS (7)
+    # ══════════════════════════════════════════════════════════════
+    "wifite": "Automated wireless auditing — WEP/WPA/WPS attacks",
+    "kismet": "Wireless detector, sniffer, IDS — WiFi, Bluetooth, Zigbee, RF",
+    "reaver": "WPS brute-force attack — recover WPA/WPA2 passphrases",
+    "bully": "WPS brute-force (C-based) — improved performance over Reaver",
+    "wifiphisher": "Rogue AP framework — WiFi phishing, credential capture",
+    "hostapd-wpe": "Rogue RADIUS server for WPA2-Enterprise attacks",
+    "mdk4": "WiFi testing — beacon flooding, deauth, WDS confusion",
+
+    # ══════════════════════════════════════════════════════════════
+    # DIRECTORY / PATH BRUTE FORCE (6)
+    # ══════════════════════════════════════════════════════════════
     "ffuf": "Fast web fuzzer — directory brute force, parameter fuzzing, vhost discovery",
-    "gobuster": "Directory/DNS/vhost brute-force scanner",
+    "gobuster": "Directory/DNS/vhost brute-force scanner — fast, Go-based",
     "dirb": "Web content scanner — recursive directory brute force",
-    "wfuzz": "Web fuzzer — headers, POST data, URLs, authentication",
-    "feroxbuster": "Recursive content discovery — fast, smart wordlists",
-    "dirsearch": "Web path brute-forcer with recursive scanning",
-    # Subdomain enumeration
-    "subfinder": "Subdomain discovery (ProjectDiscovery)",
-    "amass": "Attack surface mapping — subdomain enumeration (OWASP)",
-    "fierce": "DNS reconnaissance and subdomain brute-forcing",
+    "wfuzz": "Web fuzzer — headers, POST data, URLs, authentication testing",
+    "feroxbuster": "Recursive content discovery — fast, smart wordlists, auto-filtering",
+    "dirsearch": "Web path brute-forcer with recursive scanning and extension support",
+
+    # ══════════════════════════════════════════════════════════════
+    # WEB APPLICATION HACKING TOOLS (5)
+    # ══════════════════════════════════════════════════════════════
+    "whatweb": "Web technology fingerprinting — CMS, frameworks, servers, plugins",
+    "wafw00f": "WAF fingerprinting and detection — identifies 100+ WAF products",
+    "wpscan": "WordPress vulnerability scanner — plugins, themes, users, passwords",
+    "dalfox": "XSS scanner with DOM analysis — parameter mining and payload optimization",
+    "xsstrike": "Advanced XSS detection — fuzzing, crawling, context analysis",
+
+    # ══════════════════════════════════════════════════════════════
+    # SUBDOMAIN ENUMERATION (7)
+    # ══════════════════════════════════════════════════════════════
+    "subfinder": "Passive subdomain discovery (ProjectDiscovery) — 30+ sources",
+    "amass": "OWASP attack surface mapping — active/passive subdomain enumeration",
+    "fierce": "DNS reconnaissance — subdomain brute-forcing and zone discovery",
     "dnsrecon": "DNS enumeration — zone transfers, brute force, cache snooping",
-    "sublist3r": "Subdomain enumeration using search engines",
-    "knockpy": "Subdomain scanner with DNS resolution",
-    # SSL/TLS testing
-    "sslscan": "SSL/TLS scanner — cipher suites, protocols, certificate info",
-    "testssl": "Comprehensive SSL/TLS testing (testssl.sh)",
-    "sslyze": "Fast SSL/TLS scanner — Python-based",
-    # WAF detection
-    "wafw00f": "WAF fingerprinting and detection",
-    "whatweb": "Web technology fingerprinting — CMS, frameworks, servers",
-    # Password cracking
-    "hydra": "Network login brute-forcer — 50+ protocols (HTTP, SSH, FTP, etc.)",
-    "john": "Password cracker — dictionary, brute force, rainbow tables",
-    "hashcat": "GPU-accelerated password recovery — 300+ hash types",
-    "medusa": "Parallel network login brute-forcer",
-    # Exploitation
-    "msfconsole": "Metasploit Framework — exploit development and execution",
-    "msfvenom": "Metasploit payload generator",
-    # OSINT
+    "sublist3r": "Subdomain enumeration using search engines and public sources",
+    "knockpy": "Subdomain scanner with DNS resolution and takeover detection",
+    "dnsenum": "DNS enumeration — subdomains, MX, NS, zone transfer attempts",
+
+    # ══════════════════════════════════════════════════════════════
+    # DNS TOOLS (3)
+    # ══════════════════════════════════════════════════════════════
+    "dig": "DNS lookups — query DNS records with full control",
+    "whois": "Domain registration info — registrar, nameservers, dates",
+    "host": "Simple DNS lookup utility — forward and reverse lookups",
+
+    # ══════════════════════════════════════════════════════════════
+    # SSL/TLS TESTING (4)
+    # ══════════════════════════════════════════════════════════════
+    "sslscan": "SSL/TLS scanner — cipher suites, protocols, certificate analysis",
+    "testssl": "Comprehensive SSL/TLS testing (testssl.sh) — BEAST, POODLE, Heartbleed",
+    "sslyze": "Fast SSL/TLS scanner — certificate validation, protocol support",
+    "openssl": "SSL/TLS cryptography toolkit — certificate management, testing",
+
+    # ══════════════════════════════════════════════════════════════
+    # OSINT / SOCIAL ENGINEERING TOOLS (9)
+    # ══════════════════════════════════════════════════════════════
     "theHarvester": "OSINT — emails, subdomains, IPs from public sources",
-    "recon-ng": "Web reconnaissance framework",
-    "sherlock": "Username enumeration across social networks",
-    "spiderfoot": "Automated OSINT collection",
-    # Packet analysis
-    "tcpdump": "Network packet capture and analysis",
-    "tshark": "Wireshark CLI — deep packet inspection",
-    # WordPress
-    "wpscan": "WordPress vulnerability scanner",
-    # Web proxy / API
-    "httpx-toolkit": "HTTP probing (ProjectDiscovery)",
-    # SMB/Windows
-    "enum4linux": "SMB/Windows enumeration",
-    "smbclient": "SMB client for file share access",
-    "crackmapexec": "Post-exploitation — SMB, LDAP, WinRM, MSSQL",
-    # Wireless
-    "aircrack-ng": "WiFi security — WEP/WPA/WPA2 cracking",
-    "wifite": "Automated wireless auditing",
-    "reaver": "WPS brute-force attack",
-    # Static analysis
-    "semgrep": "Static analysis — 5000+ rules",
-    "bandit": "Python security analysis",
-    # Misc
+    "maltego": "OSINT and link analysis — data correlation across 100s of sources",
+    "recon-ng": "Web reconnaissance framework — modular OSINT collection",
+    "sherlock": "Username enumeration across 400+ social networks",
+    "spiderfoot": "Automated OSINT collection — 200+ data sources",
+    "gophish": "Phishing campaign toolkit — email phishing simulation",
+    "king-phisher": "Phishing simulation — credential harvesting, website cloning",
+    "evilginx2": "MitM framework — session cookie theft, 2FA bypass via reverse proxy",
+    "social-engineer-toolkit": "SET alias — social engineering attack framework",
+
+    # ══════════════════════════════════════════════════════════════
+    # FORENSIC TOOLS (8)
+    # ══════════════════════════════════════════════════════════════
+    "autopsy": "Digital forensics platform — disk image analysis",
+    "foremost": "File recovery/carving for forensic analysis — headers/footers",
+    "scalpel": "Fast file carver — improved version of Foremost",
+    "fls": "The Sleuth Kit — list files and directories in disk images",
+    "mmls": "The Sleuth Kit — display partition layout of volume systems",
+    "icat": "The Sleuth Kit — extract file content from disk images",
+    "volatility": "Memory forensics framework — RAM analysis, process dumping",
+    "binwalk": "Firmware analysis — extract embedded files and code",
+
+    # ══════════════════════════════════════════════════════════════
+    # POST-EXPLOITATION / CREDENTIAL TOOLS (10)
+    # ══════════════════════════════════════════════════════════════
+    "mimikatz": "Windows credential extraction — pass-the-hash, pass-the-ticket",
+    "crackmapexec": "Post-exploitation — SMB, LDAP, WinRM, MSSQL credential testing",
+    "impacket-secretsdump": "Impacket — dump NTLM hashes, Kerberos tickets from DC",
+    "impacket-psexec": "Impacket — remote command execution via SMB",
+    "impacket-smbexec": "Impacket — SMB-based remote execution",
+    "impacket-wmiexec": "Impacket — WMI-based remote execution",
+    "responder": "LLMNR/NBT-NS/MDNS poisoner — credential capture on LAN",
+    "enum4linux": "SMB/Windows enumeration — shares, users, groups, policies",
+    "smbclient": "SMB client — connect to file shares, list/download files",
+    "pcredz": "Credential extraction from PCAP files — 20+ protocols",
+
+    # ══════════════════════════════════════════════════════════════
+    # WEB PROXY / API TESTING (3)
+    # ══════════════════════════════════════════════════════════════
+    "curl": "HTTP requests — full protocol control, auth, proxies",
+    "wget": "HTTP downloader — recursive website mirroring",
+    "httpx-toolkit": "HTTP probing (ProjectDiscovery) — tech detection, status codes",
+
+    # ══════════════════════════════════════════════════════════════
+    # STATIC ANALYSIS / SECRET SCANNING (4)
+    # ══════════════════════════════════════════════════════════════
+    "semgrep": "Static analysis — 5000+ rules across 30+ languages",
+    "bandit": "Python security analysis — find common security issues",
+    "trufflehog": "Secret scanning — git repos, S3 buckets, filesystem",
+    "git-dumper": "Extract git repositories from misconfigured web servers",
+
+    # ══════════════════════════════════════════════════════════════
+    # MISCELLANEOUS (5)
+    # ══════════════════════════════════════════════════════════════
     "interactsh-client": "Out-of-band callback detection (ProjectDiscovery)",
-    "gau": "URL discovery from web archives",
+    "gau": "URL discovery from web archives — AlienVault, Wayback, CommonCrawl",
     "waybackurls": "Fetch URLs from Wayback Machine",
-    "responder": "LLMNR/NBT-NS/MDNS poisoner",
+    "commix": "Automated command injection exploiter",
+    "xsser": "Cross-site scripting framework — automated XSS exploitation",
 }
 
 

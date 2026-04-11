@@ -1769,40 +1769,125 @@ async def run_security_tool(
 
     # Security: only allow known security tools (no arbitrary command execution)
     ALLOWED_TOOLS = {
-        # Network scanning
-        "nmap", "masscan", "naabu", "unicornscan",
-        # Web scanning
-        "nikto", "whatweb", "wafw00f", "wpscan", "skipfish",
-        # Directory/path brute force
-        "gobuster", "ffuf", "dirb", "wfuzz", "dirsearch", "feroxbuster",
-        # Vulnerability scanning
-        "nuclei", "openvas", "nessus",
-        # SQL injection
-        "sqlmap",
-        # XSS scanning
-        "dalfox", "xsstrike",
-        # Subdomain enumeration
-        "subfinder", "amass", "fierce", "dnsrecon", "sublist3r", "knockpy",
-        # DNS tools
-        "dig", "whois", "host", "dnsutils", "dnsenum",
-        # SSL/TLS
-        "sslscan", "testssl", "sslyze", "openssl",
-        # Password cracking
-        "hydra", "john", "hashcat", "medusa",
-        # Exploitation frameworks
-        "msfconsole", "msfvenom",
-        # Packet analysis
-        "tcpdump", "tshark",
-        # OSINT
-        "theHarvester", "maltego", "recon-ng", "sherlock", "spiderfoot",
-        # Web proxy / API testing
-        "curl", "wget", "httpx-toolkit",
-        # Wireless (if applicable)
-        "aircrack-ng", "wifite", "reaver", "bully",
-        # Misc
-        "netcat", "nc", "ncat", "hping3", "enum4linux", "smbclient",
-        "crackmapexec", "impacket-secretsdump", "responder",
-        "interactsh-client", "gau", "waybackurls",
+        # ── Network Scanning Tools ──
+        "nmap",                 # Port scanning, service detection, NSE scripts
+        "ipscan",               # Angry IP Scanner CLI
+        "zenmap",               # Nmap GUI interface
+        "fping",                # Fast ICMP ping to multiple hosts
+        "unicornscan",          # Asynchronous TCP/UDP scanner
+        "netcat", "nc", "ncat", # Network utility — scanning, file transfer, shells
+        "masscan",              # Ultra-fast port scanner
+        "naabu",                # Fast port scanner (ProjectDiscovery)
+        "nessus", "nessusd",    # Vulnerability scanner (Tenable)
+        # ── Vulnerability Scanning Tools ──
+        "openvas", "gvm-cli",   # Open Vulnerability Assessment Scanner
+        "nikto",                # Web server scanner (7000+ checks)
+        "nuclei",               # Template-based vuln scanning (10K+ templates)
+        # ── Password Cracking Tools ──
+        "john",                 # John the Ripper — password cracker
+        "hashcat",              # GPU-accelerated password recovery
+        "rcrack",               # RainbowCrack — rainbow table cracker
+        "aircrack-ng",          # WiFi WEP/WPA/WPA2 cracking suite
+        "hydra",                # Network login brute-forcer (50+ protocols)
+        "medusa",               # Parallel network login brute-forcer
+        "l0phtcrack",           # Password auditing and recovery
+        "cowpatty",             # WPA2-PSK brute-force cracking
+        # ── Exploitation Tools ──
+        "msfconsole",           # Metasploit Framework console
+        "msfvenom",             # Metasploit payload generator
+        "msfdb",                # Metasploit database management
+        "setoolkit",            # Social-Engineer Toolkit
+        "beef-xss", "beef",     # Browser Exploitation Framework
+        "sqlmap",               # SQL injection exploitation + data extraction
+        "armitage",             # Graphical cyber attack management (Metasploit)
+        "zap-cli", "zaproxy",   # OWASP ZAP CLI / proxy
+        # ── Packet Sniffing & Spoofing Tools ──
+        "wireshark",            # Network protocol analyzer (GUI)
+        "tshark",               # Wireshark CLI — deep packet inspection
+        "tcpdump",              # Command-line packet analyzer
+        "ettercap",             # Man-in-the-middle attack suite
+        "bettercap",            # Network attack Swiss Army knife
+        "snort",                # Intrusion detection/prevention system
+        "ngrep",                # Network grep — pattern-matching packet analyzer
+        "hping3",               # Packet crafting and analysis
+        "nemesis",              # Packet crafting and injection
+        # ── Wireless Hacking Tools ──
+        "wifite",               # Automated wireless auditing
+        "kismet",               # Wireless detector, sniffer, and IDS
+        "reaver",               # WPS brute-force attack
+        "bully",                # WPS brute-force (C-based, fast)
+        "wifiphisher",          # Rogue AP framework for WiFi phishing
+        # ── Directory / Path Brute Force ──
+        "gobuster",             # Directory/DNS/vhost brute-force
+        "ffuf",                 # Fast web fuzzer
+        "dirb",                 # Web content scanner
+        "wfuzz",                # Web fuzzer — headers, POST, URLs, auth
+        "dirsearch",            # Web path brute-forcer
+        "feroxbuster",          # Recursive content discovery
+        # ── Web Application Hacking Tools ──
+        "skipfish",             # Web app security reconnaissance
+        "whatweb",              # Web technology fingerprinting
+        "wafw00f",              # WAF fingerprinting and detection
+        "wpscan",               # WordPress vulnerability scanner
+        # ── Subdomain Enumeration ──
+        "subfinder",            # Passive subdomain discovery (ProjectDiscovery)
+        "amass",                # OWASP attack surface mapping
+        "fierce",               # DNS reconnaissance and brute-forcing
+        "dnsrecon",             # DNS enumeration — zone transfers, brute force
+        "sublist3r",            # Subdomain enumeration via search engines
+        "knockpy",              # Subdomain scanner with DNS resolution
+        "dnsenum",              # DNS enumeration tool
+        # ── DNS Tools ──
+        "dig",                  # DNS lookups
+        "whois",                # Domain registration info
+        "host",                 # DNS lookup utility
+        # ── SSL/TLS Testing ──
+        "sslscan",              # SSL/TLS scanner — ciphers, protocols, certs
+        "testssl", "testssl.sh",# Comprehensive SSL/TLS testing
+        "sslyze",               # Fast SSL/TLS scanner (Python)
+        "openssl",              # SSL/TLS cryptography toolkit
+        # ── XSS Scanning ──
+        "dalfox",               # XSS scanner with DOM analysis
+        "xsstrike",             # Advanced XSS detection
+        # ── OSINT / Social Engineering ──
+        "theHarvester",         # OSINT — emails, subdomains, IPs
+        "maltego",              # OSINT and link analysis
+        "recon-ng",             # Web reconnaissance framework
+        "sherlock",             # Username enumeration across social networks
+        "spiderfoot",           # Automated OSINT collection
+        "gophish",              # Phishing campaign toolkit
+        "king-phisher",         # Phishing simulation toolkit
+        "evilginx2", "evilginx",# MitM attack framework (2FA bypass)
+        # ── Forensic Tools ──
+        "autopsy",              # Digital forensics platform
+        "foremost",             # File recovery/carving for forensics
+        "scalpel",              # Fast file carver (forensics)
+        "fls", "mmls", "icat",  # The Sleuth Kit — disk image investigation
+        "volatility", "vol",    # Memory forensics framework
+        "binwalk",              # Firmware analysis and extraction
+        # ── Post-Exploitation / Credential Tools ──
+        "mimikatz",             # Windows credential extraction
+        "crackmapexec", "cme",  # Post-exploitation — SMB, LDAP, WinRM, MSSQL
+        "impacket-secretsdump", # Impacket — credential dumping
+        "impacket-psexec",      # Impacket — remote execution
+        "impacket-smbexec",     # Impacket — SMB execution
+        "impacket-wmiexec",     # Impacket — WMI execution
+        "responder",            # LLMNR/NBT-NS/MDNS poisoner
+        "enum4linux",           # SMB/Windows enumeration
+        "smbclient",            # SMB client for file share access
+        "pcredz",               # Credential extraction from PCAP files
+        # ── Web Proxy / API Testing ──
+        "curl",                 # HTTP requests
+        "wget",                 # HTTP downloader
+        "httpx-toolkit",        # HTTP probing (ProjectDiscovery)
+        # ── Misc ──
+        "interactsh-client",    # Out-of-band callback detection
+        "gau",                  # URL discovery from web archives
+        "waybackurls",          # Fetch URLs from Wayback Machine
+        "semgrep",              # Static analysis (5000+ rules)
+        "bandit",               # Python security analysis
+        "trufflehog",           # Secret scanning in git repos
+        "gittools", "git-dumper", # Git repository extraction
     }
 
     if tool not in ALLOWED_TOOLS:
@@ -1885,6 +1970,60 @@ async def run_security_tool(
             output["next_steps"] = [
                 "Use WAF/tech info to tailor payloads via payload_generate.",
             ]
+        elif tool in ("ettercap", "bettercap"):
+            output["next_steps"] = [
+                "Analyze captured traffic for credentials, session tokens, and API keys.",
+                "Use MitM position to inject payloads or modify responses.",
+            ]
+        elif tool in ("aircrack-ng", "wifite", "reaver", "bully"):
+            output["next_steps"] = [
+                "If WiFi key cracked, connect to the network and scan internal hosts.",
+                "Run nmap on the internal network to find additional targets.",
+            ]
+        elif tool == "msfconsole":
+            output["next_steps"] = [
+                "If exploit succeeded, establish persistence and pivot to internal network.",
+                "Use post-exploitation modules to dump credentials and escalate privileges.",
+            ]
+        elif tool in ("john", "hashcat", "rcrack"):
+            output["next_steps"] = [
+                "If passwords cracked, use test_endpoint to log in and demonstrate access.",
+                "Try cracked passwords on other services — credential reuse is common.",
+            ]
+        elif tool in ("setoolkit", "gophish", "king-phisher", "evilginx2"):
+            output["next_steps"] = [
+                "Document captured credentials and session tokens.",
+                "Use captured access to demonstrate impact of social engineering.",
+            ]
+        elif tool in ("foremost", "scalpel", "binwalk", "volatility"):
+            output["next_steps"] = [
+                "Analyze recovered files for sensitive data, credentials, and artifacts.",
+            ]
+        elif tool in ("crackmapexec", "enum4linux", "smbclient", "responder"):
+            output["next_steps"] = [
+                "Use discovered credentials/shares for lateral movement.",
+                "Try impacket tools for remote execution on discovered hosts.",
+            ]
+        elif tool in ("theHarvester", "sherlock", "recon-ng", "spiderfoot", "maltego"):
+            output["next_steps"] = [
+                "Use discovered emails/users for credential stuffing and social engineering.",
+                "Map discovered infrastructure for additional attack surface.",
+            ]
+        elif tool in ("commix", "xsstrike", "xsser"):
+            output["next_steps"] = [
+                "Verify exploitation with test_endpoint — build working PoC payloads.",
+                "Chain with other findings for maximum impact.",
+            ]
+        elif tool in ("tshark", "tcpdump", "ngrep"):
+            output["next_steps"] = [
+                "Analyze captured packets for credentials, tokens, and sensitive data.",
+                "Use pcredz to auto-extract credentials from capture files.",
+            ]
+        elif tool in ("semgrep", "bandit", "trufflehog"):
+            output["next_steps"] = [
+                "Review findings for hardcoded secrets, unsafe code patterns.",
+                "Verify findings lead to actual exploitable vulnerabilities.",
+            ]
     else:
         output["next_steps"] = [f"Tool failed (exit {result.returncode}). Check stderr for details."]
 
@@ -1894,28 +2033,108 @@ async def run_security_tool(
 def _get_install_hint(tool: str) -> str:
     """Return installation hints for common security tools."""
     hints = {
+        # Network scanning
         "nmap": "brew install nmap / apt install nmap",
-        "sqlmap": "brew install sqlmap / pip install sqlmap / apt install sqlmap",
-        "nikto": "brew install nikto / apt install nikto",
-        "hydra": "brew install hydra / apt install hydra",
+        "ipscan": "brew install --cask angry-ip-scanner / https://angryip.org/download/",
+        "zenmap": "brew install --cask zenmap / apt install zenmap",
+        "fping": "brew install fping / apt install fping",
+        "unicornscan": "apt install unicornscan",
+        "masscan": "brew install masscan / apt install masscan",
+        "naabu": "go install github.com/projectdiscovery/naabu/v2/cmd/naabu@latest",
+        "hping3": "brew install hping / apt install hping3",
+        # Vulnerability scanning
+        "openvas": "apt install openvas / docker pull greenbone/openvas",
+        "gvm-cli": "pip install gvm-tools",
         "nuclei": "go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest",
+        "nikto": "brew install nikto / apt install nikto",
+        "skipfish": "apt install skipfish",
+        # SQL injection
+        "sqlmap": "brew install sqlmap / pip install sqlmap / apt install sqlmap",
+        # XSS
+        "dalfox": "go install github.com/hahwul/dalfox/v2@latest",
+        "xsstrike": "pip install xsstrike / git clone https://github.com/s0md3v/XSStrike",
+        "xsser": "pip install xsser / apt install xsser",
+        # Directory brute force
         "ffuf": "go install github.com/ffuf/ffuf/v2@latest / brew install ffuf",
         "gobuster": "go install github.com/OJ/gobuster/v3@latest / brew install gobuster",
+        "dirb": "apt install dirb",
         "wfuzz": "pip install wfuzz",
-        "subfinder": "go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest",
-        "amass": "go install github.com/owasp-amass/amass/v4/...@master",
-        "sslscan": "brew install sslscan / apt install sslscan",
+        "feroxbuster": "brew install feroxbuster / cargo install feroxbuster",
+        "dirsearch": "pip install dirsearch",
+        # Web app
         "whatweb": "brew install whatweb / apt install whatweb",
         "wafw00f": "pip install wafw00f",
-        "dalfox": "go install github.com/hahwul/dalfox/v2@latest",
-        "masscan": "brew install masscan / apt install masscan",
-        "dirb": "apt install dirb",
         "wpscan": "gem install wpscan / docker pull wpscanteam/wpscan",
+        # Subdomain
+        "subfinder": "go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest",
+        "amass": "go install github.com/owasp-amass/amass/v4/...@master",
+        "fierce": "pip install fierce",
+        "dnsrecon": "pip install dnsrecon / apt install dnsrecon",
+        "sublist3r": "pip install sublist3r",
+        "knockpy": "pip install knockpy",
+        "dnsenum": "apt install dnsenum",
+        # SSL/TLS
+        "sslscan": "brew install sslscan / apt install sslscan",
+        "testssl": "brew install testssl / git clone https://github.com/drwetter/testssl.sh",
+        "sslyze": "pip install sslyze",
+        # Password cracking
+        "hydra": "brew install hydra / apt install hydra",
         "john": "brew install john / apt install john",
         "hashcat": "brew install hashcat / apt install hashcat",
+        "medusa": "apt install medusa",
+        "rcrack": "http://project-rainbowcrack.com/",
+        "cowpatty": "apt install cowpatty",
+        # Exploitation
+        "msfconsole": "curl https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb > msfinstall && chmod 755 msfinstall && ./msfinstall",
+        "setoolkit": "apt install set / git clone https://github.com/trustedsec/social-engineer-toolkit",
+        "beef-xss": "apt install beef-xss / docker pull beefproject/beef",
+        "commix": "pip install commix / apt install commix",
+        "zap-cli": "pip install zaproxy",
+        "armitage": "apt install armitage",
+        # Packet sniffing
+        "tshark": "brew install wireshark / apt install tshark",
+        "ettercap": "brew install ettercap / apt install ettercap-text-only",
+        "bettercap": "brew install bettercap / apt install bettercap",
+        "snort": "apt install snort",
+        "ngrep": "brew install ngrep / apt install ngrep",
+        "nemesis": "apt install nemesis",
+        "scapy": "pip install scapy",
+        # Wireless
+        "aircrack-ng": "brew install aircrack-ng / apt install aircrack-ng",
+        "wifite": "apt install wifite / git clone https://github.com/derv82/wifite2",
+        "kismet": "apt install kismet",
+        "reaver": "apt install reaver",
+        "bully": "apt install bully",
+        "wifiphisher": "pip install wifiphisher",
+        # OSINT
         "theHarvester": "pip install theHarvester",
-        "testssl": "brew install testssl / git clone https://github.com/drwetter/testssl.sh",
-        "feroxbuster": "brew install feroxbuster / cargo install feroxbuster",
+        "recon-ng": "pip install recon-ng",
+        "sherlock": "pip install sherlock-project",
+        "spiderfoot": "pip install spiderfoot",
+        "gophish": "go install github.com/gophish/gophish@latest",
+        "evilginx2": "go install github.com/kgretzky/evilginx2@latest",
+        "king-phisher": "pip install king-phisher",
+        # Forensics
+        "foremost": "apt install foremost",
+        "scalpel": "apt install scalpel",
+        "volatility": "pip install volatility3",
+        "binwalk": "pip install binwalk / apt install binwalk",
+        "autopsy": "apt install autopsy",
+        # Post-exploitation
+        "crackmapexec": "pip install crackmapexec / apt install crackmapexec",
+        "enum4linux": "apt install enum4linux",
+        "responder": "apt install responder / pip install Responder",
+        "mimikatz": "Windows only — https://github.com/gentilkiwi/mimikatz",
+        "pcredz": "pip install Pcredz",
+        # Misc
+        "httpx-toolkit": "go install github.com/projectdiscovery/httpx/cmd/httpx@latest",
+        "interactsh-client": "go install github.com/projectdiscovery/interactsh/cmd/interactsh-client@latest",
+        "gau": "go install github.com/lc/gau/v2/cmd/gau@latest",
+        "waybackurls": "go install github.com/tomnomnom/waybackurls@latest",
+        "semgrep": "pip install semgrep",
+        "bandit": "pip install bandit",
+        "trufflehog": "brew install trufflehog / go install github.com/trufflesecurity/trufflehog@latest",
+        "git-dumper": "pip install git-dumper",
     }
     return hints.get(tool, f"Search: 'install {tool}' for your OS")
 
