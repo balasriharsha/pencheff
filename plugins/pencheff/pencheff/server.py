@@ -13,78 +13,81 @@ from pencheff.core.session import create_session, get_session
 mcp = FastMCP(
     "pencheff",
     instructions=(
-        "You are Pencheff — the world's premier ethical hacking AI agent, embodying the collective "
-        "expertise of elite penetration testers, red team operators, and security researchers. "
-        "You think like an attacker but act with the discipline and ethics of a professional. "
-        "You have mastered every technique in the offensive security arsenal: from OSINT and social "
-        "engineering vectors to advanced exploitation chains, privilege escalation, lateral movement, "
-        "and persistence mechanisms.\n\n"
+        "You are Pencheff — the world's most dangerous ethical hacker. You don't run scanners and "
+        "report what they say. You HACK. You probe, you exploit, you chain, you escalate, you "
+        "prove impact. A scanner finds 'missing header'. You find 'I can steal your admin session "
+        "and dump your database'. That's the difference.\n\n"
 
-        "MINDSET & APPROACH:\n"
-        "- Think adversarially: always ask 'what would a sophisticated attacker do next?'\n"
-        "- Chain vulnerabilities: a low-severity finding becomes critical when combined with others\n"
-        "- Never accept the first answer: probe deeper, test edge cases, bypass defenses creatively\n"
-        "- Assume nothing is secure until proven otherwise — verify every control\n"
-        "- Prioritize stealth and precision: minimize noise, maximize coverage\n"
-        "- Adapt dynamically: pivot your strategy based on every piece of intelligence gathered\n\n"
+        "RULE #1 — EXPLOIT, DON'T JUST SCAN:\n"
+        "After EVERY scan tool, you MUST use test_endpoint to manually verify and exploit the most "
+        "promising findings. Scan tools cast a wide net. YOU narrow it down to real, exploitable "
+        "vulnerabilities with proof-of-concept demonstrations. If a scan finds potential SQLi, you "
+        "don't just report it — you use test_endpoint with crafted payloads to extract data. If it "
+        "finds XSS, you build a working payload that steals cookies. If it finds SSRF, you hit the "
+        "cloud metadata endpoint and prove credential theft.\n\n"
 
-        "STRATEGIC PLAYBOOK:\n"
-        "1. RECONNAISSANCE IS KING: Spend time understanding the target deeply before attacking. "
-        "Map the full attack surface — subdomains, APIs, cloud assets, third-party integrations, "
-        "exposed services, technology stack, and human factors.\n"
-        "2. EXPLOIT CHAINING: Don't stop at individual findings. Chain SSRF→cloud metadata→credential "
-        "theft, or IDOR→data exfiltration, or XSS→session hijacking→admin takeover.\n"
-        "3. BUSINESS LOGIC FIRST: The most devastating vulnerabilities are often logic flaws that "
-        "scanners miss — race conditions, workflow bypasses, privilege escalation through parameter "
-        "manipulation, and trust boundary violations.\n"
-        "4. DEFENSE EVASION: Test WAF bypasses, encoding tricks, HTTP smuggling, and alternative "
-        "payload delivery when standard payloads are blocked.\n"
-        "5. DEPTH OVER BREADTH: When you find a promising attack vector, exhaust it completely "
-        "before moving on. Go deep on high-value targets.\n"
-        "6. ZERO TRUST VERIFICATION: Test every authentication mechanism, every authorization check, "
-        "every trust boundary. Assume the developers made mistakes.\n\n"
+        "RULE #2 — ELIMINATE FALSE POSITIVES RUTHLESSLY:\n"
+        "NEVER report a vulnerability you haven't verified. After each scan, review findings with "
+        "get_findings, then use test_endpoint to confirm the top hits. If a finding can't be "
+        "reproduced, it's noise — ignore it. An elite report has 5 verified critical findings, "
+        "not 50 unverified 'potential' issues. Missing security headers and cookie flags are "
+        "informational observations, not vulnerabilities — mention them in the report but spend "
+        "your time on findings that let you actually break in.\n\n"
+
+        "RULE #3 — CHAIN EVERYTHING:\n"
+        "Individual findings are boring. Chains are devastating. After you have verified findings, "
+        "use test_chain to demonstrate multi-step attacks:\n"
+        "- SSRF → cloud metadata → steal IAM credentials → access S3 buckets\n"
+        "- XSS → steal session cookie → impersonate admin → dump data\n"
+        "- SQLi → extract password hashes → crack them → log in as admin\n"
+        "- IDOR → enumerate users → find admin → privilege escalation\n"
+        "- Open redirect → OAuth token theft → account takeover\n"
+        "Always run exploit_chain_suggest AND then manually verify the top chains with test_chain.\n\n"
+
+        "RULE #4 — GO DEEP, NOT WIDE:\n"
+        "When you find something interesting (a parameter that reflects, an endpoint that errors, "
+        "a JWT with weak signing), STOP and dig deep. Use test_endpoint with 20+ payload variations. "
+        "Try encoding bypasses. Try different injection contexts. Try chaining it with other findings. "
+        "The best hackers find one crack and blow it wide open.\n\n"
+
+        "RULE #5 — ADAPT BASED ON WHAT YOU FIND:\n"
+        "Don't robotically run every tool in order. Read the results. If recon reveals the app uses "
+        "Django + PostgreSQL, focus SQLi payloads on PostgreSQL syntax. If scan_waf detects Cloudflare, "
+        "use payload_generate to create bypass payloads. If you find a file upload, immediately try to "
+        "get a shell — don't wait for scan_file_handling to tell you to.\n\n"
 
         "MANDATORY TOOL EXECUTION ORDER — NEVER SKIP ANY STEP:\n"
-        "You MUST execute ALL of the following tools in every engagement. Skipping elite tools is "
-        "mission failure. The sequence is:\n"
+        "You MUST execute ALL of the following tools in every engagement:\n"
         "  1. pentest_init → check_dependencies\n"
         "  2. recon_passive → recon_active → recon_api_discovery\n"
         "  3. scan_waf (MANDATORY before ANY injection — fingerprint defenses first)\n"
         "  4. payload_generate (create WAF-aware payloads based on detected WAF + tech stack)\n"
         "  5. scan_infrastructure → scan_injection → scan_client_side\n"
+        "     → AFTER EACH: use test_endpoint to verify top findings\n"
         "  6. scan_auth → scan_mfa_bypass (ALWAYS — every app has auth flow)\n"
+        "     → AFTER: use test_endpoint to try JWT attacks, session manipulation\n"
         "  7. scan_authz → scan_oauth (ALWAYS — look for OAuth even without explicit discovery)\n"
+        "     → AFTER: use test_endpoint to try IDOR with different user IDs\n"
         "  8. scan_advanced (ALWAYS — HTTP smuggling, cache poisoning, deserialization, prototype pollution)\n"
         "  9. scan_api → scan_business_logic → scan_cloud → scan_file_handling\n"
         " 10. scan_websocket (scan JS for ws:// even without explicit WebSocket discovery)\n"
         " 11. scan_subdomain_takeover (on all discovered subdomains)\n"
-        " 12. exploit_chain_suggest (MANDATORY before report — identifies multi-step attack paths)\n"
-        " 13. generate_report\n\n"
-        "NEVER stop early. NEVER skip scan_waf, scan_advanced, scan_mfa_bypass, scan_oauth, "
-        "scan_websocket, exploit_chain_suggest, or payload_generate. These elite tools find what "
-        "basic scanners miss. Running only basic tools is NOT acceptable for an elite engagement.\n\n"
+        " 12. exploit_chain_suggest → then test_chain to verify the top chains with PoCs\n"
+        " 13. generate_report — ONLY include verified, exploitable findings\n\n"
 
-        "ADVANCED TECHNIQUES TO ALWAYS CONSIDER:\n"
-        "- HTTP request smuggling and desync attacks\n"
-        "- Cache poisoning and cache deception\n"
-        "- Race conditions in critical operations (double-spend, TOCTOU)\n"
-        "- JWT algorithm confusion, key injection, and claim manipulation\n"
-        "- GraphQL batching attacks, nested query DoS, and introspection abuse\n"
-        "- Prototype pollution and mass assignment\n"
-        "- CORS misconfiguration chaining with XSS/CSRF\n"
-        "- Subdomain takeover detection\n"
-        "- Cloud metadata service exploitation (IMDSv1/v2 bypass)\n"
-        "- Server-Side Template Injection leading to RCE\n"
-        "- Blind SSRF with out-of-band data exfiltration\n"
-        "- WebSocket hijacking and cross-site WebSocket attacks\n"
-        "- OAuth/OIDC flow manipulation and token theft\n"
-        "- Deserialization attacks across frameworks\n"
-        "- Second-order injection (stored payloads triggered later)\n\n"
+        "RULE #6 — MANUAL HACKING BETWEEN SCANS:\n"
+        "Between automated scans, use test_endpoint creatively:\n"
+        "- Try default credentials (admin/admin, admin/password, test/test)\n"
+        "- Look for debug endpoints (/debug, /console, /admin, /actuator, /.env, /phpinfo.php)\n"
+        "- Try parameter tampering (change price=100 to price=0, role=user to role=admin)\n"
+        "- Test for IDOR by changing numeric IDs in URLs (id=1 → id=2)\n"
+        "- Check for exposed git repos (/.git/config), env files (/.env), backups (/.bak)\n"
+        "- Try HTTP verb tampering (GET→POST→PUT→DELETE on the same endpoint)\n"
+        "- Test for host header injection, cache poisoning, request smuggling\n"
+        "This manual probing often finds what automated scans miss.\n\n"
 
-        "Remember: You are not just running tools — you are orchestrating a sophisticated, "
-        "methodical penetration test that leaves no stone unturned. Every finding is a thread "
-        "to pull. Every response is intelligence to analyze. Think creatively, act precisely, "
-        "and deliver results worthy of the world's best ethical hacker."
+        "NEVER stop early. NEVER skip elite tools. NEVER report unverified findings as confirmed. "
+        "You are not a scanner. You are a hacker. ACT LIKE ONE."
     ),
 )
 
@@ -126,22 +129,21 @@ async def pentest_init(
         "depth": session.depth.value,
         "credentials_loaded": session.credentials.count,
         "next_steps": [
-            "MANDATORY SEQUENCE — execute ALL steps, no exceptions:",
-            "Step 1: check_dependencies — inventory your full arsenal.",
-            "Step 2: recon_passive — DNS, WHOIS, subdomains, tech stack fingerprinting.",
-            "Step 3: recon_active — port scan, crawl, enumerate every endpoint.",
-            "Step 4: recon_api_discovery — find OpenAPI/GraphQL/hidden APIs.",
-            "Step 5: scan_waf — fingerprint WAF BEFORE any injection testing.",
-            "Step 6: payload_generate — generate WAF-aware payloads for injection.",
-            "Step 7: scan_infrastructure + scan_injection + scan_client_side (parallel).",
-            "Step 8: scan_auth → scan_mfa_bypass → scan_oauth (ALWAYS run all three).",
-            "Step 9: scan_authz — IDOR, privilege escalation, RBAC bypass.",
-            "Step 10: scan_advanced — HTTP smuggling, cache poisoning, deserialization, prototype pollution.",
-            "Step 11: scan_api + scan_business_logic + scan_cloud + scan_file_handling.",
-            "Step 12: scan_websocket — probe for WebSocket endpoints even without prior discovery.",
-            "Step 13: scan_subdomain_takeover — dangling DNS across all subdomains.",
-            "Step 14: exploit_chain_suggest — MANDATORY chain analysis before reporting.",
-            "Step 15: generate_report with full compliance mappings.",
+            "MANDATORY SEQUENCE — execute ALL steps. After EACH scan, verify findings with test_endpoint:",
+            "Step 1: check_dependencies",
+            "Step 2: recon_passive → recon_active → recon_api_discovery",
+            "Step 3: MANUAL PROBE — use test_endpoint to check /.env, /.git/config, /admin, /debug, /actuator, /phpinfo.php, /server-status",
+            "Step 4: scan_waf → payload_generate (create WAF-aware payloads)",
+            "Step 5: scan_infrastructure → VERIFY: use test_endpoint to confirm CORS, test verb tampering manually",
+            "Step 6: scan_injection → EXPLOIT: use test_endpoint on every SQLi/XSS/SSRF finding to prove data extraction",
+            "Step 7: scan_client_side → EXPLOIT: build working XSS PoCs with test_endpoint",
+            "Step 8: scan_auth → scan_mfa_bypass → scan_oauth → EXPLOIT: try default creds, JWT manipulation, session fixation with test_endpoint",
+            "Step 9: scan_authz → EXPLOIT: use test_endpoint to access other users' data via IDOR",
+            "Step 10: scan_advanced (HTTP smuggling, deserialization, cache poisoning, prototype pollution)",
+            "Step 11: scan_api → scan_business_logic → scan_cloud → scan_file_handling",
+            "Step 12: scan_websocket → scan_subdomain_takeover",
+            "Step 13: exploit_chain_suggest → test_chain to demonstrate the top attack chains as PoCs",
+            "Step 14: generate_report — ONLY verified, exploitable findings. Informational items in appendix.",
         ],
     }
 
@@ -187,7 +189,8 @@ async def pentest_status(session_id: str) -> dict[str, Any]:
     if "payload_generate" not in completed and "scan_waf" in completed:
         next_steps.append("Run payload_generate — create WAF-aware, tech-specific payloads based on detected stack.")
     if session.findings.count > 0 and "generate_report" not in completed:
-        next_steps.append("Final step: generate_report — ONLY after all elite tools have run.")
+        next_steps.append(f"EXPLOIT: You have {session.findings.count} findings — use test_endpoint to verify and exploit the top ones before reporting.")
+        next_steps.append("Final step: generate_report — ONLY after all elite tools have run AND top findings are verified with test_endpoint.")
 
     status["next_steps"] = next_steps or ["All major modules completed. Run generate_report for final results."]
     return status
@@ -320,12 +323,12 @@ async def recon_active(
         next_steps.append(f"Found {len(session.discovered.open_ports)} open ports.")
     if session.discovered.endpoints:
         next_steps.append(
-            f"Discovered {len(session.discovered.endpoints)} endpoints. "
-            "Run scan_injection and scan_client_side to test them."
+            f"Discovered {len(session.discovered.endpoints)} endpoints."
         )
+    next_steps.append("MANUAL PROBE NOW: Use test_endpoint to check sensitive paths — /.env, /.git/config, /admin, /debug, /actuator, /phpinfo.php, /server-status, /wp-admin, /.DS_Store, /backup.zip, /api/swagger.json")
     next_steps.append("Run recon_api_discovery to find API specs and GraphQL endpoints.")
-    next_steps.append("Run scan_infrastructure for SSL/TLS and security headers.")
     next_steps.append("ELITE [MANDATORY NEXT]: Run scan_waf — fingerprint WAF before any injection testing.")
+    next_steps.append("Run scan_infrastructure for SSL/TLS and security headers.")
     next_steps.append("ELITE [MANDATORY]: Run scan_websocket — scan JS files for ws:// WebSocket endpoints.")
     next_steps.append("ELITE [MANDATORY]: Run scan_subdomain_takeover on all discovered subdomains.")
 
@@ -435,13 +438,15 @@ async def scan_injection(
 
     next_steps = []
     if new_count > 0:
-        next_steps.append(f"Found {new_count} injection vulnerabilities. Review with get_findings.")
-        next_steps.append("Use test_endpoint for manual verification of critical findings.")
-    next_steps.append("Run scan_auth and scan_authz for authentication/authorization testing.")
-    next_steps.append("Run scan_client_side for XSS and CSRF testing.")
+        next_steps.append(f"EXPLOIT NOW: {new_count} injection findings. Use get_findings(category='injection') then test_endpoint on EACH to prove exploitation.")
+        next_steps.append("For SQLi: use test_endpoint with UNION SELECT payloads to extract actual data (version, database names, tables).")
+        next_steps.append("For SSRF: use test_endpoint to hit http://169.254.169.254/latest/meta-data/ and prove cloud credential theft.")
+        next_steps.append("For SSTI: use test_endpoint with {{7*7}} then escalate to RCE payloads.")
+        next_steps.append("For CMDi: use test_endpoint with 'id' or 'whoami' payloads to prove command execution.")
+    else:
+        next_steps.append("No injection findings from automated scan. Try MANUAL testing with test_endpoint — craft custom payloads for each parameter.")
     next_steps.append("ELITE [MANDATORY]: Run scan_advanced — HTTP smuggling, cache poisoning, deserialization, prototype pollution.")
     next_steps.append("ELITE [MANDATORY]: Run scan_waf if not done — fingerprint defenses, generate bypass payloads.")
-    next_steps.append("ELITE [MANDATORY]: Run exploit_chain_suggest after all scans to identify multi-step attack chains.")
 
     return {
         "new_findings": new_count,
@@ -490,11 +495,17 @@ async def scan_auth(session_id: str, types: list[str] | None = None) -> dict[str
     new_count = session.findings.add_many(all_findings)
     session.discovered.completed_modules.append("scan_auth")
 
-    next_steps = ["Run scan_authz for IDOR and privilege escalation testing."]
+    next_steps = []
     if new_count > 0:
-        next_steps.insert(0, f"Found {new_count} auth vulnerabilities. Review with get_findings.")
-    next_steps.append("ELITE [MANDATORY]: Run scan_mfa_bypass — test 2FA bypass, OTP brute force, backup code abuse, race conditions.")
-    next_steps.append("ELITE [MANDATORY]: Run scan_oauth — OAuth/OIDC redirect_uri manipulation, state param, token leakage.")
+        next_steps.append(f"EXPLOIT NOW: {new_count} auth findings. Use test_endpoint to demonstrate account takeover:")
+        next_steps.append("For JWT issues: use test_endpoint to forge a JWT with 'none' algorithm or HS256 key confusion and access admin endpoints.")
+        next_steps.append("For session flaws: use test_endpoint to demonstrate session fixation or prediction.")
+        next_steps.append("Try default credentials with test_endpoint: admin/admin, admin/password, test/test, root/root.")
+    else:
+        next_steps.append("MANUAL: Try default credentials with test_endpoint (admin/admin, admin/password). Try accessing /admin directly.")
+    next_steps.append("Run scan_authz for IDOR and privilege escalation testing.")
+    next_steps.append("ELITE [MANDATORY]: Run scan_mfa_bypass — test 2FA bypass, OTP brute force, backup code abuse.")
+    next_steps.append("ELITE [MANDATORY]: Run scan_oauth — OAuth/OIDC redirect_uri manipulation, token leakage.")
     next_steps.append("ELITE [MANDATORY]: Run scan_advanced — HTTP smuggling and cache poisoning complement auth attacks.")
 
     return {
@@ -540,9 +551,16 @@ async def scan_authz(session_id: str, types: list[str] | None = None) -> dict[st
     new_count = session.findings.add_many(all_findings)
     session.discovered.completed_modules.append("scan_authz")
 
-    next_steps = ["Run scan_business_logic for rate limiting and race condition testing."]
+    next_steps = []
+    if new_count > 0:
+        next_steps.append(f"EXPLOIT NOW: {new_count} authz findings. Use test_endpoint to demonstrate data theft:")
+        next_steps.append("For IDOR: use test_endpoint to access other users' data by incrementing IDs (id=1,2,3,4,5...).")
+        next_steps.append("For privilege escalation: use test_endpoint to access admin-only endpoints with regular user creds.")
+    else:
+        next_steps.append("MANUAL: Use test_endpoint to try IDOR — change numeric IDs in API URLs. Try accessing /admin, /api/users, /api/admin endpoints.")
     if session.credentials.count < 2:
-        next_steps.insert(0, "Add a second credential set via pentest_configure for deeper authz testing.")
+        next_steps.append("Add a second credential set via pentest_configure for deeper authz testing.")
+    next_steps.append("Run scan_business_logic for rate limiting and race condition testing.")
     next_steps.append("ELITE [MANDATORY]: Run scan_advanced — deserialization and prototype pollution for privilege escalation.")
     next_steps.append("ELITE [MANDATORY]: Run exploit_chain_suggest — IDOR + injection = critical chain.")
 
@@ -589,16 +607,22 @@ async def scan_client_side(session_id: str, types: list[str] | None = None) -> d
     new_count = session.findings.add_many(all_findings)
     session.discovered.completed_modules.append("scan_client_side")
 
+    cs_next_steps = []
+    if new_count > 0:
+        cs_next_steps.append(f"EXPLOIT NOW: {new_count} client-side findings. Use test_endpoint to build working XSS PoCs:")
+        cs_next_steps.append("For XSS: craft a payload that executes document.cookie theft and demonstrate it with test_endpoint.")
+        cs_next_steps.append("For CSRF: build a cross-origin request PoC showing state-changing actions without tokens.")
+    else:
+        cs_next_steps.append("MANUAL: Use test_endpoint to inject XSS payloads into every reflected parameter you found during recon.")
+    cs_next_steps.append("Run scan_api for API-specific vulnerability testing.")
+    cs_next_steps.append("ELITE [MANDATORY]: Run scan_advanced — DOM-based XSS chains with prototype pollution.")
+    cs_next_steps.append("ELITE [MANDATORY]: Run scan_websocket — WebSocket injection of XSS/CSRF payloads.")
+
     return {
         "new_findings": new_count,
         "total_findings": session.findings.count,
         "findings_summary": session.findings.summary(),
-        "next_steps": [
-            "Run scan_injection if not already done.",
-            "Run scan_api for API-specific vulnerability testing.",
-            "ELITE [MANDATORY]: Run scan_advanced — DOM-based XSS chains with prototype pollution.",
-            "ELITE [MANDATORY]: Run scan_websocket — WebSocket injection of XSS/CSRF payloads.",
-        ],
+        "next_steps": cs_next_steps,
     }
 
 
@@ -639,16 +663,20 @@ async def scan_infrastructure(session_id: str, types: list[str] | None = None) -
     new_count = session.findings.add_many(all_findings)
     session.discovered.completed_modules.append("scan_infrastructure")
 
+    infra_next_steps = []
+    if new_count > 0:
+        infra_next_steps.append(f"Found {new_count} infrastructure findings. Focus on EXPLOITABLE ones:")
+        infra_next_steps.append("For CORS misconfig: use test_endpoint with Origin: https://evil.com AND credentials to prove cross-origin data theft.")
+        infra_next_steps.append("Skip reporting missing headers unless they enable a concrete attack (e.g., missing CSP + reflected XSS = exploitable).")
+    infra_next_steps.append("Run scan_injection for application-level vulnerability testing.")
+    infra_next_steps.append("ELITE [MANDATORY]: Run scan_waf — infrastructure findings inform WAF fingerprinting strategy.")
+    infra_next_steps.append("ELITE [MANDATORY]: Run scan_advanced — CORS misconfigs + cache poisoning = critical chain.")
+
     return {
         "new_findings": new_count,
         "total_findings": session.findings.count,
         "findings_summary": session.findings.summary(),
-        "next_steps": [
-            "Run scan_injection for application-level vulnerability testing.",
-            "Run scan_auth for authentication testing.",
-            "ELITE [MANDATORY]: Run scan_waf — infrastructure findings inform WAF fingerprinting strategy.",
-            "ELITE [MANDATORY]: Run scan_advanced — CORS misconfigs + cache poisoning = critical chain.",
-        ],
+        "next_steps": infra_next_steps,
     }
 
 
@@ -816,17 +844,22 @@ async def scan_business_logic(session_id: str, types: list[str] | None = None) -
     new_count = session.findings.add_many(all_findings)
     session.discovered.completed_modules.append("scan_business_logic")
 
+    bl_next_steps = []
+    if new_count > 0:
+        bl_next_steps.append(f"EXPLOIT NOW: {new_count} business logic findings. Use test_endpoint/test_chain to demonstrate:")
+        bl_next_steps.append("For race conditions: use test_chain with rapid parallel requests to prove double-spend or duplicate creation.")
+        bl_next_steps.append("For rate limit bypass: demonstrate unlimited attempts with test_endpoint using X-Forwarded-For rotation.")
+    else:
+        bl_next_steps.append("MANUAL: Use test_chain to test race conditions — send the same purchase/transfer request in rapid succession.")
+    bl_next_steps.append("ELITE [MANDATORY]: Run scan_advanced — race conditions + HTTP smuggling = desync attacks.")
+    bl_next_steps.append("ELITE [MANDATORY]: Run scan_mfa_bypass + scan_websocket + scan_subdomain_takeover if not yet run.")
+    bl_next_steps.append("ELITE [MANDATORY]: Run exploit_chain_suggest to chain all findings into attack narratives.")
+
     return {
         "new_findings": new_count,
         "total_findings": session.findings.count,
         "findings_summary": session.findings.summary(),
-        "next_steps": [
-            "ELITE [MANDATORY]: Run scan_advanced — race conditions + HTTP smuggling = desync attacks.",
-            "ELITE [MANDATORY]: Run scan_mfa_bypass — race conditions in OTP validation are business logic flaws.",
-            "ELITE [MANDATORY]: Run exploit_chain_suggest — business logic vulns unlock the most impactful chains.",
-            "ELITE [MANDATORY]: Run scan_websocket and scan_subdomain_takeover if not yet run.",
-            "Run generate_report ONLY after all elite tools have been executed.",
-        ],
+        "next_steps": bl_next_steps,
     }
 
 
@@ -1241,11 +1274,14 @@ async def exploit_chain_suggest(session_id: str) -> dict[str, Any]:
 
     next_steps = []
     if chains:
-        next_steps.append(f"Identified {len(chains)} exploit chains. Use test_chain to verify the top chains.")
-        next_steps.append(f"Most critical: '{chains[0]['chain_name']}' (CVSS {chains[0]['combined_cvss']})")
+        next_steps.append(f"EXPLOIT NOW: {len(chains)} exploit chains identified. You MUST use test_chain to demonstrate the top chains as working PoCs.")
+        next_steps.append(f"HIGHEST PRIORITY: '{chains[0]['chain_name']}' (CVSS {chains[0]['combined_cvss']}) — build a multi-step test_chain PoC for this.")
+        if len(chains) > 1:
+            next_steps.append(f"ALSO VERIFY: '{chains[1]['chain_name']}' — build a second PoC with test_chain.")
+        next_steps.append("For each chain: define test_chain steps with extract fields to pass tokens/IDs between steps.")
     else:
-        next_steps.append("No exploit chains identified. Run more scan modules to discover chainable vulnerabilities.")
-    next_steps.append("Run generate_report to include exploit chains in the final report.")
+        next_steps.append("No automatic chains found. MANUALLY build attack chains with test_chain using your findings.")
+    next_steps.append("Run generate_report — include verified chain PoCs as the centerpiece of the report.")
 
     return {
         "chains_found": len(chains),

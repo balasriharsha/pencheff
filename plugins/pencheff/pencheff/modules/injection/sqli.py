@@ -167,11 +167,25 @@ class SQLiModule(BaseTestModule):
                 true_resp = await self._inject(http, url, param, true_payload, method)
                 false_resp = await self._inject(http, url, param, false_payload, method)
 
-                # Significant difference in response suggests blind SQLi
+                # Significant AND consistent difference suggests blind SQLi
                 len_diff = abs(len(true_resp.text) - len(false_resp.text))
                 status_diff = true_resp.status_code != false_resp.status_code
 
-                if len_diff > 100 or status_diff:
+                # Require BOTH length AND status difference, or very large length diff
+                # to reduce false positives from normal app behavior
+                if (len_diff > 500 and status_diff) or len_diff > 2000:
+                    # Confirmation: re-test to eliminate false positives
+                    try:
+                        confirm_true = await self._inject(http, url, param, true_payload, method)
+                        confirm_false = await self._inject(http, url, param, false_payload, method)
+                        confirm_len_diff = abs(len(confirm_true.text) - len(confirm_false.text))
+                        confirm_status_diff = confirm_true.status_code != confirm_false.status_code
+                        # Both tests must show consistent behavior
+                        if not ((confirm_len_diff > 500 and confirm_status_diff) or confirm_len_diff > 2000):
+                            continue
+                    except Exception:
+                        continue
+
                     return Finding(
                         title="SQL Injection (Blind Boolean-Based)",
                         severity=Severity.HIGH,
