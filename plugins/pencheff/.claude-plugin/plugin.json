@@ -1,6 +1,6 @@
 {
   "name": "pencheff",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Elite AI penetration tester that doesn't just scan — it HACKS. Verifies and exploits every finding, chains vulnerabilities into attack narratives, and proves impact with proof-of-concept demonstrations. 29 advanced tools: reconnaissance, WAF detection, injection testing, auth/authz attacks, HTTP smuggling, cache poisoning, deserialization, OAuth/OIDC exploitation, WebSocket attacks, MFA bypass, subdomain takeover. Manual hacking with test_endpoint between scans. Eliminates false positives. Focuses on exploitable vulnerabilities with verified PoCs.",
   "author": {
     "name": "Bala Sriharsha",

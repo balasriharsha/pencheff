@@ -75,7 +75,31 @@ mcp = FastMCP(
         " 12. exploit_chain_suggest → then test_chain to verify the top chains with PoCs\n"
         " 13. generate_report — ONLY include verified, exploitable findings\n\n"
 
-        "RULE #6 — MANUAL HACKING BETWEEN SCANS:\n"
+        "RULE #6 — USE EXTERNAL TOOLS (run_security_tool) FOR REAL EXPLOITATION:\n"
+        "You have access to run_security_tool which executes real external security tools. "
+        "check_dependencies tells you which tools are installed. USE THEM:\n"
+        "- nmap: ALWAYS use for port scanning instead of the basic built-in scanner. "
+        "  Run: run_security_tool(sid, 'nmap', ['-sV', '-sC', '-p-', target]) for full scan. "
+        "  Run: run_security_tool(sid, 'nmap', ['--script=vuln', target]) for vulnerability scripts.\n"
+        "- sqlmap: When you find ANY potential SQLi, use sqlmap to PROVE it and extract data. "
+        "  Run: run_security_tool(sid, 'sqlmap', ['-u', url_with_param, '--batch', '--dbs'])\n"
+        "- nikto: ALWAYS run for web server scanning — finds thousands of issues. "
+        "  Run: run_security_tool(sid, 'nikto', ['-h', target_url])\n"
+        "- hydra: When testing login forms, use hydra for brute force with real wordlists. "
+        "  Run: run_security_tool(sid, 'hydra', ['-l', 'admin', '-P', wordlist, target, 'http-post-form', ...])\n"
+        "- nuclei: Run for template-based scanning with 10K+ vulnerability templates. "
+        "  Run: run_security_tool(sid, 'nuclei', ['-u', target_url, '-severity', 'critical,high'])\n"
+        "- ffuf/gobuster: ALWAYS run for directory brute-force to find hidden paths. "
+        "  Run: run_security_tool(sid, 'ffuf', ['-u', target_url+'/FUZZ', '-w', wordlist])\n"
+        "- subfinder: Use for subdomain discovery in addition to built-in module. "
+        "  Run: run_security_tool(sid, 'subfinder', ['-d', domain])\n"
+        "- sslscan/testssl: Deep SSL/TLS testing beyond the built-in module.\n"
+        "- wafw00f: WAF fingerprinting to complement scan_waf.\n"
+        "- whatweb: Technology fingerprinting.\n"
+        "- dalfox: Advanced XSS scanning with DOM analysis.\n"
+        "- john/hashcat: If you extract password hashes, CRACK THEM.\n\n"
+
+        "RULE #7 — MANUAL HACKING BETWEEN SCANS:\n"
         "Between automated scans, use test_endpoint creatively:\n"
         "- Try default credentials (admin/admin, admin/password, test/test)\n"
         "- Look for debug endpoints (/debug, /console, /admin, /actuator, /.env, /phpinfo.php)\n"
@@ -129,21 +153,23 @@ async def pentest_init(
         "depth": session.depth.value,
         "credentials_loaded": session.credentials.count,
         "next_steps": [
-            "MANDATORY SEQUENCE — execute ALL steps. After EACH scan, verify findings with test_endpoint:",
-            "Step 1: check_dependencies",
+            "MANDATORY SEQUENCE — use BOTH built-in modules AND external tools (run_security_tool):",
+            "Step 1: check_dependencies — see which external tools (nmap, sqlmap, nikto, hydra, nuclei, ffuf) are available",
             "Step 2: recon_passive → recon_active → recon_api_discovery",
-            "Step 3: MANUAL PROBE — use test_endpoint to check /.env, /.git/config, /admin, /debug, /actuator, /phpinfo.php, /server-status",
-            "Step 4: scan_waf → payload_generate (create WAF-aware payloads)",
-            "Step 5: scan_infrastructure → VERIFY: use test_endpoint to confirm CORS, test verb tampering manually",
-            "Step 6: scan_injection → EXPLOIT: use test_endpoint on every SQLi/XSS/SSRF finding to prove data extraction",
-            "Step 7: scan_client_side → EXPLOIT: build working XSS PoCs with test_endpoint",
-            "Step 8: scan_auth → scan_mfa_bypass → scan_oauth → EXPLOIT: try default creds, JWT manipulation, session fixation with test_endpoint",
-            "Step 9: scan_authz → EXPLOIT: use test_endpoint to access other users' data via IDOR",
-            "Step 10: scan_advanced (HTTP smuggling, deserialization, cache poisoning, prototype pollution)",
+            "Step 2b: run_security_tool with nmap (-sV -sC -p-) for thorough port/service scan. Run subfinder for subdomains.",
+            "Step 3: MANUAL PROBE — test_endpoint on /.env, /.git/config, /admin, /debug, /actuator, /phpinfo.php, /server-status",
+            "Step 3b: run_security_tool with ffuf/gobuster for directory brute-force to find hidden paths",
+            "Step 4: scan_waf + run_security_tool with wafw00f → payload_generate",
+            "Step 5: run_security_tool with nikto for web server scanning",
+            "Step 6: scan_injection → THEN run_security_tool with sqlmap on any SQLi parameter to PROVE data extraction",
+            "Step 7: scan_client_side → THEN run_security_tool with dalfox for advanced XSS if available",
+            "Step 8: scan_auth → scan_mfa_bypass → scan_oauth → THEN run_security_tool with hydra for brute force on login forms",
+            "Step 9: scan_authz → EXPLOIT: test_endpoint to access other users' data via IDOR",
+            "Step 10: scan_advanced + run_security_tool with nuclei (-severity critical,high)",
             "Step 11: scan_api → scan_business_logic → scan_cloud → scan_file_handling",
             "Step 12: scan_websocket → scan_subdomain_takeover",
-            "Step 13: exploit_chain_suggest → test_chain to demonstrate the top attack chains as PoCs",
-            "Step 14: generate_report — ONLY verified, exploitable findings. Informational items in appendix.",
+            "Step 13: exploit_chain_suggest → test_chain to build working PoCs for top chains",
+            "Step 14: generate_report — ONLY verified, exploitable findings",
         ],
     }
 
@@ -1439,16 +1465,25 @@ async def test_endpoint(
     method: str,
     url: str,
     headers: dict | None = None,
-    body: str | None = None,
+    body: str | dict | list | None = None,
     payloads: list[str] | None = None,
     follow_redirects: bool = True,
 ) -> dict[str, Any]:
     """Run a targeted test against a specific endpoint. Use for manual/custom testing
-    or to follow up on a finding. If payloads provided, sends one request per payload
-    substituted into the body/URL."""
+    or to follow up on a finding. Body accepts strings or JSON objects (dicts/lists —
+    auto-serialized). If payloads provided, sends one request per payload
+    substituted into the body/URL via the PENCHEFF placeholder."""
     session = _require_session(session_id)
 
+    import json as _json
     from pencheff.core.http_client import PencheffHTTPClient
+
+    # Auto-serialize dict/list body to JSON string
+    if isinstance(body, (dict, list)):
+        body = _json.dumps(body)
+        if headers is None:
+            headers = {}
+        headers.setdefault("Content-Type", "application/json")
 
     http = PencheffHTTPClient(session)
     results = []
@@ -1524,7 +1559,12 @@ async def test_chain(session_id: str, steps: list[dict]) -> dict[str, Any]:
             method = step.get("method", "GET")
             url = substitute(step["url"])
             headers = {k: substitute(v) for k, v in step.get("headers", {}).items()}
-            body = substitute(step.get("body", ""))
+            raw_body = step.get("body", "")
+            # Auto-serialize dict/list bodies to JSON
+            if isinstance(raw_body, (dict, list)):
+                raw_body = json.dumps(raw_body)
+                headers.setdefault("Content-Type", "application/json")
+            body = substitute(raw_body) if isinstance(raw_body, str) else raw_body
 
             resp = await http.request(
                 method, url, headers=headers or None,
@@ -1686,9 +1726,204 @@ async def generate_report(
 
 
 @mcp.tool()
+async def run_security_tool(
+    session_id: str,
+    tool: str,
+    args: list[str],
+    timeout: int = 120,
+    parse_output: bool = True,
+) -> dict[str, Any]:
+    """Execute an external security tool (nmap, sqlmap, nikto, hydra, nuclei, ffuf,
+    gobuster, wfuzz, subfinder, dirb, whatweb, wafw00f, sslscan, testssl, masscan,
+    amass, fierce, dnsrecon, theHarvester, etc.) with safe subprocess execution.
+
+    Examples:
+      run_security_tool(sid, "nmap", ["-sV", "-sC", "-p-", "target.com"])
+      run_security_tool(sid, "sqlmap", ["-u", "http://target.com/page?id=1", "--batch", "--dbs"])
+      run_security_tool(sid, "nikto", ["-h", "https://target.com"])
+      run_security_tool(sid, "hydra", ["-l", "admin", "-P", "/usr/share/wordlists/rockyou.txt", "target.com", "http-post-form", "/login:user=^USER^&pass=^PASS^:F=incorrect"])
+      run_security_tool(sid, "nuclei", ["-u", "https://target.com", "-severity", "critical,high"])
+      run_security_tool(sid, "ffuf", ["-u", "https://target.com/FUZZ", "-w", "/usr/share/wordlists/dirb/common.txt"])
+      run_security_tool(sid, "gobuster", ["dir", "-u", "https://target.com", "-w", "/usr/share/wordlists/dirb/common.txt"])
+      run_security_tool(sid, "wfuzz", ["-c", "-z", "file,/usr/share/wordlists/dirb/common.txt", "https://target.com/FUZZ"])
+      run_security_tool(sid, "sslscan", ["target.com"])
+      run_security_tool(sid, "whatweb", ["https://target.com"])
+      run_security_tool(sid, "wafw00f", ["https://target.com"])
+      run_security_tool(sid, "dirb", ["https://target.com"])
+      run_security_tool(sid, "subfinder", ["-d", "target.com"])
+      run_security_tool(sid, "amass", ["enum", "-d", "target.com"])
+      run_security_tool(sid, "dnsrecon", ["-d", "target.com"])
+      run_security_tool(sid, "fierce", ["--domain", "target.com"])
+      run_security_tool(sid, "john", ["--wordlist=/usr/share/wordlists/rockyou.txt", "hashes.txt"])
+      run_security_tool(sid, "hashcat", ["-m", "0", "hashes.txt", "/usr/share/wordlists/rockyou.txt"])
+      run_security_tool(sid, "wpscan", ["--url", "https://target.com"])
+      run_security_tool(sid, "masscan", ["-p1-65535", "target.com", "--rate=1000"])
+      run_security_tool(sid, "testssl", ["https://target.com"])
+
+    The tool must be installed on the system. Use check_dependencies to see available tools.
+    Output is captured and returned (truncated to 50KB). Use this for REAL exploitation and
+    deep scanning — these tools find what built-in modules cannot."""
+    session = _require_session(session_id)
+
+    from pencheff.core.tool_runner import tool_available, run_tool
+
+    # Security: only allow known security tools (no arbitrary command execution)
+    ALLOWED_TOOLS = {
+        # Network scanning
+        "nmap", "masscan", "naabu", "unicornscan",
+        # Web scanning
+        "nikto", "whatweb", "wafw00f", "wpscan", "skipfish",
+        # Directory/path brute force
+        "gobuster", "ffuf", "dirb", "wfuzz", "dirsearch", "feroxbuster",
+        # Vulnerability scanning
+        "nuclei", "openvas", "nessus",
+        # SQL injection
+        "sqlmap",
+        # XSS scanning
+        "dalfox", "xsstrike",
+        # Subdomain enumeration
+        "subfinder", "amass", "fierce", "dnsrecon", "sublist3r", "knockpy",
+        # DNS tools
+        "dig", "whois", "host", "dnsutils", "dnsenum",
+        # SSL/TLS
+        "sslscan", "testssl", "sslyze", "openssl",
+        # Password cracking
+        "hydra", "john", "hashcat", "medusa",
+        # Exploitation frameworks
+        "msfconsole", "msfvenom",
+        # Packet analysis
+        "tcpdump", "tshark",
+        # OSINT
+        "theHarvester", "maltego", "recon-ng", "sherlock", "spiderfoot",
+        # Web proxy / API testing
+        "curl", "wget", "httpx-toolkit",
+        # Wireless (if applicable)
+        "aircrack-ng", "wifite", "reaver", "bully",
+        # Misc
+        "netcat", "nc", "ncat", "hping3", "enum4linux", "smbclient",
+        "crackmapexec", "impacket-secretsdump", "responder",
+        "interactsh-client", "gau", "waybackurls",
+    }
+
+    if tool not in ALLOWED_TOOLS:
+        return {
+            "error": f"Tool '{tool}' is not in the allowed security tools list. "
+                     f"Allowed: {', '.join(sorted(ALLOWED_TOOLS)[:30])}...",
+            "success": False,
+        }
+
+    if not tool_available(tool):
+        return {
+            "error": f"Tool '{tool}' is not installed on this system. "
+                     "Install it or use the built-in modules as fallback.",
+            "success": False,
+            "install_hint": _get_install_hint(tool),
+        }
+
+    # Execute the tool
+    result = await run_tool([tool] + args, timeout=float(timeout))
+
+    # Log the execution
+    session.log_request("TOOL", f"{tool} {' '.join(args[:5])}", None, f"ext:{tool}", 0)
+
+    # Truncate output to prevent massive responses
+    stdout = result.stdout[:51200] if result.stdout else ""
+    stderr = result.stderr[:10240] if result.stderr else ""
+
+    output = {
+        "tool": tool,
+        "args": args,
+        "success": result.success,
+        "exit_code": result.returncode,
+        "stdout": stdout,
+        "stderr": stderr,
+        "next_steps": [],
+    }
+
+    # Add contextual next_steps based on tool type
+    if result.success:
+        if tool == "nmap":
+            output["next_steps"] = [
+                "Analyze open ports and services. Use test_endpoint to probe interesting services.",
+                "Run 'nmap -sV --script=vuln' for vulnerability scripts on discovered services.",
+            ]
+        elif tool == "sqlmap":
+            output["next_steps"] = [
+                "If SQLi confirmed, run with --dump to extract data as proof of exploitation.",
+                "Try --os-shell for OS command execution if DB user has FILE privilege.",
+            ]
+        elif tool == "nikto":
+            output["next_steps"] = [
+                "Verify each finding manually with test_endpoint.",
+                "Focus on outdated software versions and dangerous files/directories.",
+            ]
+        elif tool == "hydra":
+            output["next_steps"] = [
+                "If credentials found, use test_endpoint to log in and demonstrate access.",
+                "Try the found credentials on other services (SSH, admin panels, APIs).",
+            ]
+        elif tool == "nuclei":
+            output["next_steps"] = [
+                "Critical/High findings need manual verification with test_endpoint.",
+                "Run with specific templates for deeper testing: nuclei -t cves/",
+            ]
+        elif tool in ("ffuf", "gobuster", "dirb", "wfuzz", "feroxbuster"):
+            output["next_steps"] = [
+                "Check discovered paths with test_endpoint — look for admin panels, config files, backups.",
+                "Run scan_injection on newly discovered endpoints with parameters.",
+            ]
+        elif tool in ("subfinder", "amass", "fierce", "dnsrecon"):
+            output["next_steps"] = [
+                "Run scan_subdomain_takeover on discovered subdomains.",
+                "Test each subdomain for separate vulnerabilities — they often run different software.",
+            ]
+        elif tool in ("sslscan", "testssl", "sslyze"):
+            output["next_steps"] = [
+                "Check for weak ciphers, expired certs, and protocol downgrade attacks.",
+            ]
+        elif tool in ("wafw00f", "whatweb"):
+            output["next_steps"] = [
+                "Use WAF/tech info to tailor payloads via payload_generate.",
+            ]
+    else:
+        output["next_steps"] = [f"Tool failed (exit {result.returncode}). Check stderr for details."]
+
+    return output
+
+
+def _get_install_hint(tool: str) -> str:
+    """Return installation hints for common security tools."""
+    hints = {
+        "nmap": "brew install nmap / apt install nmap",
+        "sqlmap": "brew install sqlmap / pip install sqlmap / apt install sqlmap",
+        "nikto": "brew install nikto / apt install nikto",
+        "hydra": "brew install hydra / apt install hydra",
+        "nuclei": "go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest",
+        "ffuf": "go install github.com/ffuf/ffuf/v2@latest / brew install ffuf",
+        "gobuster": "go install github.com/OJ/gobuster/v3@latest / brew install gobuster",
+        "wfuzz": "pip install wfuzz",
+        "subfinder": "go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest",
+        "amass": "go install github.com/owasp-amass/amass/v4/...@master",
+        "sslscan": "brew install sslscan / apt install sslscan",
+        "whatweb": "brew install whatweb / apt install whatweb",
+        "wafw00f": "pip install wafw00f",
+        "dalfox": "go install github.com/hahwul/dalfox/v2@latest",
+        "masscan": "brew install masscan / apt install masscan",
+        "dirb": "apt install dirb",
+        "wpscan": "gem install wpscan / docker pull wpscanteam/wpscan",
+        "john": "brew install john / apt install john",
+        "hashcat": "brew install hashcat / apt install hashcat",
+        "theHarvester": "pip install theHarvester",
+        "testssl": "brew install testssl / git clone https://github.com/drwetter/testssl.sh",
+        "feroxbuster": "brew install feroxbuster / cargo install feroxbuster",
+    }
+    return hints.get(tool, f"Search: 'install {tool}' for your OS")
+
+
+@mcp.tool()
 async def check_dependencies(install_missing: bool = False) -> dict[str, Any]:
     """Check which pentest tools and Python packages are available, which are missing,
-    and reports capability gaps."""
+    and reports capability gaps. Use this to know your arsenal before attacking."""
     report = check_all_dependencies()
 
     if install_missing and report["missing_required"]:
