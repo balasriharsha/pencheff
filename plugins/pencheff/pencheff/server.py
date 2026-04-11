@@ -44,11 +44,25 @@ mcp = FastMCP(
         "6. ZERO TRUST VERIFICATION: Test every authentication mechanism, every authorization check, "
         "every trust boundary. Assume the developers made mistakes.\n\n"
 
-        "OPERATIONAL FLOW:\n"
-        "Use pentest_init to start a session, then systematically execute reconnaissance, scanning, "
-        "and exploitation verification tools. Each tool returns findings and next_steps — but don't "
-        "just follow the suggestions blindly. Use your elite judgment to decide what to test next "
-        "based on the intelligence you've gathered. The suggested next_steps are a floor, not a ceiling.\n\n"
+        "MANDATORY TOOL EXECUTION ORDER — NEVER SKIP ANY STEP:\n"
+        "You MUST execute ALL of the following tools in every engagement. Skipping elite tools is "
+        "mission failure. The sequence is:\n"
+        "  1. pentest_init → check_dependencies\n"
+        "  2. recon_passive → recon_active → recon_api_discovery\n"
+        "  3. scan_waf (MANDATORY before ANY injection — fingerprint defenses first)\n"
+        "  4. payload_generate (create WAF-aware payloads based on detected WAF + tech stack)\n"
+        "  5. scan_infrastructure → scan_injection → scan_client_side\n"
+        "  6. scan_auth → scan_mfa_bypass (ALWAYS — every app has auth flow)\n"
+        "  7. scan_authz → scan_oauth (ALWAYS — look for OAuth even without explicit discovery)\n"
+        "  8. scan_advanced (ALWAYS — HTTP smuggling, cache poisoning, deserialization, prototype pollution)\n"
+        "  9. scan_api → scan_business_logic → scan_cloud → scan_file_handling\n"
+        " 10. scan_websocket (scan JS for ws:// even without explicit WebSocket discovery)\n"
+        " 11. scan_subdomain_takeover (on all discovered subdomains)\n"
+        " 12. exploit_chain_suggest (MANDATORY before report — identifies multi-step attack paths)\n"
+        " 13. generate_report\n\n"
+        "NEVER stop early. NEVER skip scan_waf, scan_advanced, scan_mfa_bypass, scan_oauth, "
+        "scan_websocket, exploit_chain_suggest, or payload_generate. These elite tools find what "
+        "basic scanners miss. Running only basic tools is NOT acceptable for an elite engagement.\n\n"
 
         "ADVANCED TECHNIQUES TO ALWAYS CONSIDER:\n"
         "- HTTP request smuggling and desync attacks\n"
@@ -112,10 +126,22 @@ async def pentest_init(
         "depth": session.depth.value,
         "credentials_loaded": session.credentials.count,
         "next_steps": [
-            "Run check_dependencies to inventory your full arsenal before engagement.",
-            "Run recon_passive — map the target's digital footprint: DNS, WHOIS, subdomains, tech stack.",
-            "Run recon_active — enumerate every port, crawl every endpoint, fingerprint every service.",
-            "Think adversarially: what would a nation-state attacker target first?",
+            "MANDATORY SEQUENCE — execute ALL steps, no exceptions:",
+            "Step 1: check_dependencies — inventory your full arsenal.",
+            "Step 2: recon_passive — DNS, WHOIS, subdomains, tech stack fingerprinting.",
+            "Step 3: recon_active — port scan, crawl, enumerate every endpoint.",
+            "Step 4: recon_api_discovery — find OpenAPI/GraphQL/hidden APIs.",
+            "Step 5: scan_waf — fingerprint WAF BEFORE any injection testing.",
+            "Step 6: payload_generate — generate WAF-aware payloads for injection.",
+            "Step 7: scan_infrastructure + scan_injection + scan_client_side (parallel).",
+            "Step 8: scan_auth → scan_mfa_bypass → scan_oauth (ALWAYS run all three).",
+            "Step 9: scan_authz — IDOR, privilege escalation, RBAC bypass.",
+            "Step 10: scan_advanced — HTTP smuggling, cache poisoning, deserialization, prototype pollution.",
+            "Step 11: scan_api + scan_business_logic + scan_cloud + scan_file_handling.",
+            "Step 12: scan_websocket — probe for WebSocket endpoints even without prior discovery.",
+            "Step 13: scan_subdomain_takeover — dangling DNS across all subdomains.",
+            "Step 14: exploit_chain_suggest — MANDATORY chain analysis before reporting.",
+            "Step 15: generate_report with full compliance mappings.",
         ],
     }
 
@@ -142,22 +168,26 @@ async def pentest_status(session_id: str) -> dict[str, Any]:
         next_steps.append("Run scan_auth — systematically dismantle authentication: JWT attacks, session flaws, brute force resistance.")
     if session.credentials.count > 1 and "scan_authz" not in completed:
         next_steps.append("HIGH VALUE: Run scan_authz — multiple credential sets available. Hunt for IDOR, privilege escalation, RBAC bypass.")
-    if "scan_waf" not in completed and "scan_injection" not in completed:
-        next_steps.append("Run scan_waf BEFORE injection scans — WAF detection informs payload strategy.")
-    if session.discovered.subdomains and "scan_subdomain_takeover" not in completed:
-        next_steps.append(f"Run scan_subdomain_takeover — {len(session.discovered.subdomains)} subdomains discovered.")
-    if session.discovered.oauth_endpoints and "scan_oauth" not in completed:
-        next_steps.append("Run scan_oauth — OAuth endpoints detected.")
-    if session.discovered.websocket_endpoints and "scan_websocket" not in completed:
-        next_steps.append("Run scan_websocket — WebSocket endpoints detected.")
-    if "scan_auth" in completed and "scan_mfa_bypass" not in completed:
-        next_steps.append("Run scan_mfa_bypass — test 2FA bypass techniques.")
-    if "scan_injection" in completed and "scan_advanced" not in completed:
-        next_steps.append("Run scan_advanced for HTTP smuggling, cache poisoning, deserialization, prototype pollution.")
-    if session.findings.count >= 3 and "exploit_chain_suggest" not in completed:
-        next_steps.append(f"Run exploit_chain_suggest — {session.findings.count} findings available for chain analysis.")
+    # Elite tools — always recommend if not yet run (no conditional suppression)
+    if "scan_waf" not in completed:
+        next_steps.append("ELITE [MANDATORY]: Run scan_waf — WAF fingerprinting must happen before/alongside injection testing.")
+    if "scan_advanced" not in completed and "recon_active" in completed:
+        next_steps.append("ELITE [MANDATORY]: Run scan_advanced — HTTP smuggling, cache poisoning, deserialization, prototype pollution.")
+    if "scan_mfa_bypass" not in completed and "scan_auth" in completed:
+        next_steps.append("ELITE [MANDATORY]: Run scan_mfa_bypass — test 2FA bypass, OTP rate limiting, backup code abuse.")
+    if "scan_oauth" not in completed and "recon_active" in completed:
+        next_steps.append("ELITE [MANDATORY]: Run scan_oauth — OAuth/OIDC flow attacks, even without explicit endpoint discovery.")
+    if "scan_websocket" not in completed and "recon_active" in completed:
+        next_steps.append("ELITE [MANDATORY]: Run scan_websocket — probe for WebSocket endpoints in JS and test CSWSH.")
+    if "scan_subdomain_takeover" not in completed and (session.discovered.subdomains or "recon_passive" in completed):
+        cnt = len(session.discovered.subdomains)
+        next_steps.append(f"ELITE [MANDATORY]: Run scan_subdomain_takeover — {cnt} subdomains discovered, check dangling CNAMEs.")
+    if "exploit_chain_suggest" not in completed and session.findings.count >= 2:
+        next_steps.append(f"ELITE [MANDATORY]: Run exploit_chain_suggest — {session.findings.count} findings ready for chain analysis.")
+    if "payload_generate" not in completed and "scan_waf" in completed:
+        next_steps.append("Run payload_generate — create WAF-aware, tech-specific payloads based on detected stack.")
     if session.findings.count > 0 and "generate_report" not in completed:
-        next_steps.append("Run generate_report — but first, verify critical findings manually and attempt vulnerability chaining.")
+        next_steps.append("Final step: generate_report — ONLY after all elite tools have run.")
 
     status["next_steps"] = next_steps or ["All major modules completed. Run generate_report for final results."]
     return status
@@ -295,6 +325,9 @@ async def recon_active(
         )
     next_steps.append("Run recon_api_discovery to find API specs and GraphQL endpoints.")
     next_steps.append("Run scan_infrastructure for SSL/TLS and security headers.")
+    next_steps.append("ELITE [MANDATORY NEXT]: Run scan_waf — fingerprint WAF before any injection testing.")
+    next_steps.append("ELITE [MANDATORY]: Run scan_websocket — scan JS files for ws:// WebSocket endpoints.")
+    next_steps.append("ELITE [MANDATORY]: Run scan_subdomain_takeover on all discovered subdomains.")
 
     return {
         "results": results,
@@ -406,6 +439,9 @@ async def scan_injection(
         next_steps.append("Use test_endpoint for manual verification of critical findings.")
     next_steps.append("Run scan_auth and scan_authz for authentication/authorization testing.")
     next_steps.append("Run scan_client_side for XSS and CSRF testing.")
+    next_steps.append("ELITE [MANDATORY]: Run scan_advanced — HTTP smuggling, cache poisoning, deserialization, prototype pollution.")
+    next_steps.append("ELITE [MANDATORY]: Run scan_waf if not done — fingerprint defenses, generate bypass payloads.")
+    next_steps.append("ELITE [MANDATORY]: Run exploit_chain_suggest after all scans to identify multi-step attack chains.")
 
     return {
         "new_findings": new_count,
@@ -457,6 +493,9 @@ async def scan_auth(session_id: str, types: list[str] | None = None) -> dict[str
     next_steps = ["Run scan_authz for IDOR and privilege escalation testing."]
     if new_count > 0:
         next_steps.insert(0, f"Found {new_count} auth vulnerabilities. Review with get_findings.")
+    next_steps.append("ELITE [MANDATORY]: Run scan_mfa_bypass — test 2FA bypass, OTP brute force, backup code abuse, race conditions.")
+    next_steps.append("ELITE [MANDATORY]: Run scan_oauth — OAuth/OIDC redirect_uri manipulation, state param, token leakage.")
+    next_steps.append("ELITE [MANDATORY]: Run scan_advanced — HTTP smuggling and cache poisoning complement auth attacks.")
 
     return {
         "new_findings": new_count,
@@ -504,6 +543,8 @@ async def scan_authz(session_id: str, types: list[str] | None = None) -> dict[st
     next_steps = ["Run scan_business_logic for rate limiting and race condition testing."]
     if session.credentials.count < 2:
         next_steps.insert(0, "Add a second credential set via pentest_configure for deeper authz testing.")
+    next_steps.append("ELITE [MANDATORY]: Run scan_advanced — deserialization and prototype pollution for privilege escalation.")
+    next_steps.append("ELITE [MANDATORY]: Run exploit_chain_suggest — IDOR + injection = critical chain.")
 
     return {
         "new_findings": new_count,
@@ -555,6 +596,8 @@ async def scan_client_side(session_id: str, types: list[str] | None = None) -> d
         "next_steps": [
             "Run scan_injection if not already done.",
             "Run scan_api for API-specific vulnerability testing.",
+            "ELITE [MANDATORY]: Run scan_advanced — DOM-based XSS chains with prototype pollution.",
+            "ELITE [MANDATORY]: Run scan_websocket — WebSocket injection of XSS/CSRF payloads.",
         ],
     }
 
@@ -603,6 +646,8 @@ async def scan_infrastructure(session_id: str, types: list[str] | None = None) -
         "next_steps": [
             "Run scan_injection for application-level vulnerability testing.",
             "Run scan_auth for authentication testing.",
+            "ELITE [MANDATORY]: Run scan_waf — infrastructure findings inform WAF fingerprinting strategy.",
+            "ELITE [MANDATORY]: Run scan_advanced — CORS misconfigs + cache poisoning = critical chain.",
         ],
     }
 
@@ -647,7 +692,12 @@ async def scan_api(session_id: str, types: list[str] | None = None) -> dict[str,
         "new_findings": new_count,
         "total_findings": session.findings.count,
         "findings_summary": session.findings.summary(),
-        "next_steps": ["Run scan_business_logic for rate limiting and race conditions."],
+        "next_steps": [
+            "Run scan_business_logic for rate limiting and race conditions.",
+            "ELITE [MANDATORY]: Run scan_advanced — mass assignment + HTTP smuggling = privilege escalation chain.",
+            "ELITE [MANDATORY]: Run scan_subdomain_takeover on all discovered subdomains.",
+            "ELITE [MANDATORY]: Run exploit_chain_suggest — correlate API findings into attack chains.",
+        ],
     }
 
 
@@ -685,7 +735,11 @@ async def scan_cloud(session_id: str, provider: str = "aws") -> dict[str, Any]:
         "new_findings": new_count,
         "total_findings": session.findings.count,
         "findings_summary": session.findings.summary(),
-        "next_steps": ["Review cloud findings with get_findings category='cloud'."],
+        "next_steps": [
+            "Review cloud findings with get_findings category='cloud'.",
+            "ELITE [MANDATORY]: Run scan_advanced — SSRF + cloud metadata = credential theft chain.",
+            "ELITE [MANDATORY]: Run exploit_chain_suggest — cloud misconfigs often anchor critical chains.",
+        ],
     }
 
 
@@ -719,7 +773,11 @@ async def scan_file_handling(session_id: str) -> dict[str, Any]:
         "new_findings": new_count,
         "total_findings": session.findings.count,
         "findings_summary": session.findings.summary(),
-        "next_steps": ["Run generate_report if all testing is complete."],
+        "next_steps": [
+            "ELITE [MANDATORY]: Run scan_advanced — file upload + deserialization = RCE chain.",
+            "ELITE [MANDATORY]: Run exploit_chain_suggest — file upload vulns drive the highest-impact chains.",
+            "Run scan_business_logic for race conditions in file processing.",
+        ],
     }
 
 
@@ -762,7 +820,13 @@ async def scan_business_logic(session_id: str, types: list[str] | None = None) -
         "new_findings": new_count,
         "total_findings": session.findings.count,
         "findings_summary": session.findings.summary(),
-        "next_steps": ["Run generate_report for the final penetration test report."],
+        "next_steps": [
+            "ELITE [MANDATORY]: Run scan_advanced — race conditions + HTTP smuggling = desync attacks.",
+            "ELITE [MANDATORY]: Run scan_mfa_bypass — race conditions in OTP validation are business logic flaws.",
+            "ELITE [MANDATORY]: Run exploit_chain_suggest — business logic vulns unlock the most impactful chains.",
+            "ELITE [MANDATORY]: Run scan_websocket and scan_subdomain_takeover if not yet run.",
+            "Run generate_report ONLY after all elite tools have been executed.",
+        ],
     }
 
 
