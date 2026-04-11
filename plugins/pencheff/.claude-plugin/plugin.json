@@ -1,7 +1,7 @@
 {
   "name": "pencheff",
-  "version": "0.1.4",
-  "description": "Elite AI penetration tester that doesn't just scan — it HACKS. Verifies and exploits every finding, chains vulnerabilities into attack narratives, and proves impact with proof-of-concept demonstrations. 29 advanced tools: reconnaissance, WAF detection, injection testing, auth/authz attacks, HTTP smuggling, cache poisoning, deserialization, OAuth/OIDC exploitation, WebSocket attacks, MFA bypass, subdomain takeover. Manual hacking with test_endpoint between scans. Eliminates false positives. Focuses on exploitable vulnerabilities with verified PoCs.",
+  "version": "0.1.5",
+  "description": "Elite AI penetration tester that doesn't just scan — it HACKS. Verifies and exploits every finding, chains vulnerabilities into attack narratives, and proves impact with proof-of-concept demonstrations. 32 advanced tools: reconnaissance, WAF detection, injection testing, auth/authz attacks, HTTP smuggling, cache poisoning, deserialization, OAuth/OIDC exploitation, WebSocket attacks, MFA bypass, subdomain takeover, 116 external tools via run_security_tool. Exports reports to Word (.docx), CSV, and JSON with verification status (true positive, false positive, etc.). Manual hacking with test_endpoint between scans. Eliminates false positives. Focuses on exploitable vulnerabilities with verified PoCs.",
   "author": {
     "name": "Bala Sriharsha",
     "url": "https://github.com/balasriharsha"

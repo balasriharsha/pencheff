@@ -127,6 +127,9 @@ def _render_markdown(session: PentestSession, report_type: str, frameworks: list
                     lines.append(f"- **Parameter:** `{f.parameter}`")
                 if f.cwe_id:
                     lines.append(f"- **CWE:** {f.cwe_id}")
+                lines.append(f"- **Verification:** {f.verification_status.value.replace('_', ' ').title()}")
+                if f.verification_notes:
+                    lines.append(f"- **Verification Notes:** {f.verification_notes}")
                 lines.append("")
                 lines.append(f"**Description:** {f.description}")
                 lines.append("")

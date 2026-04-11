@@ -6,7 +6,7 @@ Unlike static scanners, Pencheff uses Claude as its brain. Each testing module r
 
 ## Features
 
-- **30 MCP tools** covering the full pentest lifecycle — from reconnaissance to exploit chain analysis
+- **32 MCP tools** covering the full pentest lifecycle — from reconnaissance to exploit chain analysis
 - **50 attack modules** across 11 categories implementing real detection logic
 - **326 payloads** across 17 payload files for injection, bypass, and exploitation testing
 - **Adaptive testing** — Claude reasons about discovered tech stack, WAF detection, and vulnerabilities to guide testing strategy
@@ -17,6 +17,7 @@ Unlike static scanners, Pencheff uses Claude as its brain. Each testing module r
 - **WAF-aware payloads** — detects WAF vendor and generates bypass-optimized payloads
 - **116 external security tools** — execute nmap, sqlmap, nikto, hydra, nuclei, metasploit, and 110 more directly via `run_security_tool`
 - **Exploitation-first methodology** — every scan finding is verified with `test_endpoint`, false positives eliminated, PoCs demonstrated
+- **Export to Word, CSV, JSON** — professional reports in `.docx` for stakeholders, `.csv` for tracking systems, `.json` for automation — all with verification status (true positive, false positive, true/false negative)
 - **Secure by design** — credentials wrapped in `MaskedSecret`, never logged or leaked in findings
 - **Natural language input** — just describe your target and credentials
 
@@ -76,7 +77,7 @@ Or call individual tools for targeted testing:
 Use pentest_init to start a session against https://example.com, then run scan_injection on the /api/login endpoint.
 ```
 
-## MCP Tools (30)
+## MCP Tools (32)
 
 ### Session Management (3)
 
@@ -150,12 +151,14 @@ Use pentest_init to start a session against https://example.com, then run scan_i
 | `test_chain` | Multi-step attack sequence with variable extraction (JSONPath) and substitution between steps — for verifying exploit chains. Step bodies accept string, dict, or list |
 | `analyze_response` | Analyze an HTTP response for information disclosure, error messages, sensitive data patterns (AWS keys, JWTs, emails), and missing security headers |
 
-### Reporting (3)
+### Reporting & Export (5)
 
 | Tool | Description |
 |------|-------------|
 | `get_findings` | Retrieve findings filtered by severity, category, or OWASP category |
 | `generate_report` | Full pentest report — executive summary, technical details, CVSS scores, compliance mapping (Markdown/JSON). Types: executive, technical, full |
+| `export_report` | Export report to **Word (.docx)**, **CSV**, and **JSON** files. Word includes formatted tables, severity colors, remediation roadmap. CSV has one row per finding with all fields. All include verification status. Saved to `~/pencheff-reports/<session_id>/` |
+| `verify_finding` | Set verification status on a finding: `true_positive`, `false_positive`, `true_negative`, `false_negative`, or `unverified`. Use after `test_endpoint` verification — status is included in all exports |
 | `check_dependencies` | Verify available Python packages and system tools, report capability gaps |
 
 ## Attack Modules (50)
@@ -298,7 +301,7 @@ plugins/pencheff/
 ├── pyproject.toml                 # Python package (hatch build)
 └── pencheff/
     ├── __main__.py                # Entry: python -m pencheff
-    ├── server.py                  # FastMCP server — 30 tools, 1 prompt
+    ├── server.py                  # FastMCP server — 32 tools, 1 prompt
     ├── config.py                  # Constants, OWASP/PCI-DSS/NIST mappings (27 categories)
     ├── core/
     │   ├── session.py             # PentestSession state (endpoints, subdomains, tech stack,
@@ -332,7 +335,8 @@ plugins/pencheff/
     ├── reporting/
     │   ├── cvss.py                # CVSS v3.1 base score calculator
     │   ├── compliance.py          # OWASP/PCI-DSS/NIST coverage analysis
-    │   └── renderer.py            # Markdown and JSON report rendering
+    │   ├── renderer.py            # Markdown and JSON report rendering
+    │   └── exporter.py            # Word (.docx), CSV, JSON file export
     └── payloads/                  # 17 payload files, 326 total payloads
 ```
 
@@ -451,6 +455,32 @@ Each finding includes:
 - PCI-DSS and NIST 800-53 control mapping
 - Automatic deduplication by (endpoint, parameter, category, title)
 
+### Verification Status
+
+Every finding carries a `verification_status` field that tracks whether it has been confirmed or debunked:
+
+| Status | Meaning |
+|--------|---------|
+| `unverified` | Default — scan detected it but not yet manually verified |
+| `true_positive` | Confirmed exploitable via `test_endpoint` verification |
+| `false_positive` | Debunked — scan flagged it but manual testing shows it's not exploitable |
+| `true_negative` | Confirmed absent — tested and verified the vulnerability doesn't exist |
+| `false_negative` | Missed by scanner — discovered via manual testing after scan reported clean |
+
+Use `verify_finding` to set the status after `test_endpoint` verification. All export formats (Word, CSV, JSON) include this field.
+
+### Report Export Formats
+
+The `export_report` tool saves findings to three formats simultaneously:
+
+| Format | File | Use Case |
+|--------|------|----------|
+| **Word (.docx)** | `pencheff_report_<timestamp>.docx` | Professional report for stakeholders — formatted tables, severity colors, compliance mapping, remediation roadmap |
+| **CSV** | `pencheff_findings_<timestamp>.csv` | Import into Jira, Linear, or spreadsheets — one row per finding with all fields |
+| **JSON** | `pencheff_findings_<timestamp>.json` | Programmatic analysis, CI/CD integration, data pipelines |
+
+All files are saved to `~/pencheff-reports/<session_id>/` by default.
+
 ### HTTP Client Capabilities
 
 The core HTTP client (`PencheffHTTPClient`) provides:
@@ -518,6 +548,7 @@ The core HTTP client (`PencheffHTTPClient`) provides:
 - `dnspython` — DNS enumeration
 - `beautifulsoup4` + `lxml` — HTML parsing
 - `anyio` — Async runtime
+- `python-docx` — Word document generation for report export
 
 ### Optional (enhanced scanning)
 

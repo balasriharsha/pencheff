@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from pencheff.config import CVSS_SEVERITY, NIST_MAP, OWASP_TOP_10, PCI_DSS_MAP, Severity
+from pencheff.config import CVSS_SEVERITY, NIST_MAP, OWASP_TOP_10, PCI_DSS_MAP, Severity, VerificationStatus
 
 
 @dataclass
@@ -53,6 +53,8 @@ class Finding:
     evidence: list[Evidence] = field(default_factory=list)
     references: list[str] = field(default_factory=list)
     cwe_id: str | None = None
+    verification_status: VerificationStatus = VerificationStatus.UNVERIFIED
+    verification_notes: str = ""
     id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
     discovered_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -89,6 +91,8 @@ class Finding:
             "references": self.references,
             "cwe": self.cwe_id,
             "compliance": self.compliance_mapping,
+            "verification_status": self.verification_status.value,
+            "verification_notes": self.verification_notes,
             "discovered_at": self.discovered_at.isoformat(),
         }
 

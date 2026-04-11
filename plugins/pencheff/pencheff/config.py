@@ -20,6 +20,14 @@ class Severity(str, Enum):
     INFO = "info"
 
 
+class VerificationStatus(str, Enum):
+    UNVERIFIED = "unverified"
+    TRUE_POSITIVE = "true_positive"
+    FALSE_POSITIVE = "false_positive"
+    TRUE_NEGATIVE = "true_negative"
+    FALSE_NEGATIVE = "false_negative"
+
+
 class TestDepth(str, Enum):
     QUICK = "quick"
     STANDARD = "standard"

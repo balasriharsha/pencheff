@@ -1726,6 +1726,102 @@ async def generate_report(
 
 
 @mcp.tool()
+async def export_report(
+    session_id: str,
+    formats: list[str] | None = None,
+    report_type: str = "full",
+    output_dir: str | None = None,
+) -> dict[str, Any]:
+    """Export pentest report to Word (.docx), CSV, and JSON files.
+
+    Each format includes:
+    - Word (.docx): Full formatted report with severity colors, tables, compliance mapping,
+      verification status, remediation roadmap — ready to share with stakeholders.
+    - CSV: Flat row-per-finding with all fields including verification_status
+      (true_positive, false_positive, true_negative, false_negative, unverified),
+      CVSS scores, compliance mappings — ready for import into tracking systems.
+    - JSON: Structured findings with full evidence, compliance, and verification details.
+
+    Files are saved to output_dir (default: ~/pencheff-reports/<session_id>/).
+    Use verify_finding to set verification_status on findings before exporting."""
+    session = _require_session(session_id)
+
+    from pencheff.reporting.exporter import export_all, export_docx, export_csv, export_json
+
+    fmt_list = formats or ["docx", "csv", "json"]
+    results = {}
+
+    out_dir = output_dir
+
+    for fmt in fmt_list:
+        if fmt == "docx":
+            results["docx"] = export_docx(session, report_type=report_type, output_dir=out_dir)
+        elif fmt == "csv":
+            results["csv"] = export_csv(session, output_dir=out_dir)
+        elif fmt == "json":
+            results["json"] = export_json(session, output_dir=out_dir)
+
+    session.discovered.completed_modules.append("export_report")
+
+    return {
+        "exported_files": results,
+        "formats": list(results.keys()),
+        "finding_count": session.findings.count,
+        "next_steps": [
+            "Files have been saved — share the Word report with stakeholders.",
+            "Import the CSV into your vulnerability tracking system (Jira, Linear, etc.).",
+            "Use the JSON file for programmatic analysis or integration with CI/CD.",
+        ],
+    }
+
+
+@mcp.tool()
+async def verify_finding(
+    session_id: str,
+    finding_id: str,
+    status: str,
+    notes: str = "",
+) -> dict[str, Any]:
+    """Set the verification status of a finding.
+
+    Status must be one of: true_positive, false_positive, true_negative, false_negative, unverified.
+
+    Use this after test_endpoint verification to mark findings as confirmed (true_positive)
+    or debunked (false_positive). This status is included in all exports (Word, CSV, JSON)."""
+    from pencheff.config import VerificationStatus
+
+    session = _require_session(session_id)
+
+    valid_statuses = [s.value for s in VerificationStatus]
+    if status not in valid_statuses:
+        return {"error": f"Invalid status '{status}'. Must be one of: {', '.join(valid_statuses)}"}
+
+    # Find the finding
+    target_finding = None
+    for f in session.findings.get_all():
+        if f.id == finding_id:
+            target_finding = f
+            break
+
+    if not target_finding:
+        return {"error": f"Finding '{finding_id}' not found. Use get_findings to list finding IDs."}
+
+    target_finding.verification_status = VerificationStatus(status)
+    target_finding.verification_notes = notes
+
+    return {
+        "finding_id": finding_id,
+        "title": target_finding.title,
+        "verification_status": status,
+        "verification_notes": notes,
+        "next_steps": [
+            "Continue verifying other findings with test_endpoint + verify_finding.",
+            "Once all findings are verified, use export_report to generate final deliverables.",
+        ],
+    }
+
+
+@mcp.tool()
 async def run_security_tool(
     session_id: str,
     tool: str,
