@@ -6,7 +6,7 @@ Unlike static scanners, Pencheff uses Claude as its brain. Each testing module r
 
 ## Features
 
-- **29 MCP tools** covering the full pentest lifecycle — from reconnaissance to exploit chain analysis
+- **30 MCP tools** covering the full pentest lifecycle — from reconnaissance to exploit chain analysis
 - **50 attack modules** across 11 categories implementing real detection logic
 - **326 payloads** across 17 payload files for injection, bypass, and exploitation testing
 - **Adaptive testing** — Claude reasons about discovered tech stack, WAF detection, and vulnerabilities to guide testing strategy
@@ -15,6 +15,8 @@ Unlike static scanners, Pencheff uses Claude as its brain. Each testing module r
 - **Multi-credential support** — test authorization boundaries between user roles
 - **Exploit chain analysis** — automatically identifies multi-step attack paths across findings
 - **WAF-aware payloads** — detects WAF vendor and generates bypass-optimized payloads
+- **116 external security tools** — execute nmap, sqlmap, nikto, hydra, nuclei, metasploit, and 110 more directly via `run_security_tool`
+- **Exploitation-first methodology** — every scan finding is verified with `test_endpoint`, false positives eliminated, PoCs demonstrated
 - **Secure by design** — credentials wrapped in `MaskedSecret`, never logged or leaked in findings
 - **Natural language input** — just describe your target and credentials
 
@@ -74,7 +76,7 @@ Or call individual tools for targeted testing:
 Use pentest_init to start a session against https://example.com, then run scan_injection on the /api/login endpoint.
 ```
 
-## MCP Tools (29)
+## MCP Tools (30)
 
 ### Session Management (3)
 
@@ -134,12 +136,18 @@ Use pentest_init to start a session against https://example.com, then run scan_i
 | `exploit_chain_suggest` | Analyzes all findings against 14 chain rules to identify multi-step attack paths (e.g., SSRF + cloud metadata = credential theft, XSS + weak session = account takeover). Returns ranked chains with combined CVSS and exploitation narratives |
 | `payload_generate` | Generates context-aware payloads optimized for the target's detected tech stack and WAF. Supports 13 attack types with framework-specific mutations (MySQL/PostgreSQL/MSSQL for SQLi, Jinja2/Twig/Freemarker for SSTI, etc.) and WAF bypass encodings |
 
+### External Tool Execution (1)
+
+| Tool | Description |
+|------|-------------|
+| `run_security_tool` | Execute any of 116 allowlisted external security tools (nmap, sqlmap, nikto, hydra, nuclei, metasploit, etc.) with safe subprocess execution. Accepts tool name and arguments, returns stdout/stderr with intelligent next-step recommendations based on tool category. See [External Security Tools](#external-security-tools-116) for the full list |
+
 ### Manual / Targeted Testing (3)
 
 | Tool | Description |
 |------|-------------|
-| `test_endpoint` | Custom HTTP request with specific payloads against a single endpoint. Supports payload substitution via `PENCHEFF` marker |
-| `test_chain` | Multi-step attack sequence with variable extraction (JSONPath) and substitution between steps — for verifying exploit chains |
+| `test_endpoint` | Custom HTTP request with specific payloads against a single endpoint. Accepts `body` as string, dict, or list (auto-serialized to JSON). Supports payload substitution via `PENCHEFF` marker |
+| `test_chain` | Multi-step attack sequence with variable extraction (JSONPath) and substitution between steps — for verifying exploit chains. Step bodies accept string, dict, or list |
 | `analyze_response` | Analyze an HTTP response for information disclosure, error messages, sensitive data patterns (AWS keys, JWTs, emails), and missing security headers |
 
 ### Reporting (3)
@@ -290,7 +298,7 @@ plugins/pencheff/
 ├── pyproject.toml                 # Python package (hatch build)
 └── pencheff/
     ├── __main__.py                # Entry: python -m pencheff
-    ├── server.py                  # FastMCP server — 29 tools, 1 prompt
+    ├── server.py                  # FastMCP server — 30 tools, 1 prompt
     ├── config.py                  # Constants, OWASP/PCI-DSS/NIST mappings (27 categories)
     ├── core/
     │   ├── session.py             # PentestSession state (endpoints, subdomains, tech stack,
@@ -301,7 +309,7 @@ plugins/pencheff/
     │   │                          #   credential injection, rate limiting
     │   ├── payload_loader.py      # Centralized payload file loader
     │   ├── tool_runner.py         # Safe subprocess execution (no shell=True)
-    │   └── dependency_manager.py  # Python/system tool availability checks
+    │   └── dependency_manager.py  # Python/system tool availability checks (116 tools)
     ├── modules/
     │   ├── base.py                # BaseTestModule ABC
     │   ├── recon/                  # 5 modules: DNS, subdomains, tech fingerprint, port scan,
@@ -348,20 +356,58 @@ Every tool returns a structured response:
 
 Claude reads these `next_steps` and decides what to test next. This feedback loop means Pencheff adapts to each target instead of running the same static checks every time.
 
-### Testing Methodology (10 Phases)
+### Exploitation-First Methodology
+
+Pencheff doesn't just scan — it **hacks**. The agent follows 7 core rules:
+
+1. **Exploit, don't just scan** — After every scan tool, use `test_endpoint` to verify findings. If you can't prove it, it's not a finding.
+2. **Eliminate false positives** — Re-test with different payloads, check for SPA behavior, confirm with manual verification.
+3. **Chain everything** — Every finding is a building block. SSRF + cloud metadata = credential theft. XSS + weak sessions = account takeover. Use `exploit_chain_suggest` and `test_chain`.
+4. **Go deep** — Don't stop at the first layer. If SQLi works, extract data. If SSRF works, pivot to internal services.
+5. **Adapt to defenses** — WAF detected? Generate bypass payloads. Rate limited? Slow down and rotate. SPA returning 200 for all paths? Recognize it and move on.
+6. **Use external tools** — `run_security_tool` gives you access to 116 tools. Use nmap for port scanning, sqlmap for SQLi exploitation, hydra for brute force, nuclei for template scanning.
+7. **Manual hacking between scans** — Use `test_endpoint` to probe interesting behavior. Don't wait for a scan tool to tell you what to test.
+
+### Testing Phases (10)
 
 The built-in `pentest_methodology` prompt guides Claude through a comprehensive 10-phase assessment:
 
-1. **Preparation** — Initialize session with `pentest_init`, verify tools with `check_dependencies`
-2. **Reconnaissance** — Map the full attack surface: DNS, subdomains, ports, tech stack, APIs
-3. **Infrastructure** — SSL/TLS, security headers, CORS, HTTP methods
-4. **Authentication** — Session management, JWT vulnerabilities, brute force resistance
-5. **WAF Detection** — Fingerprint WAF and test bypass techniques before injection testing
-6. **Injection Warfare** — 10 injection types across all discovered endpoints
-7. **Advanced Attacks** — HTTP smuggling, cache poisoning, deserialization, prototype pollution
+1. **Preparation** — Initialize session with `pentest_init`, verify tools with `check_dependencies`, run `run_security_tool` with nmap for port scanning
+2. **Reconnaissance** — Map the full attack surface: DNS, subdomains, ports, tech stack, APIs. Use `subfinder`, `amass`, `whatweb` via `run_security_tool`
+3. **Infrastructure** — SSL/TLS, security headers, CORS, HTTP methods. Use `sslscan`, `testssl` via `run_security_tool`
+4. **Authentication** — Session management, JWT vulnerabilities, brute force resistance. Use `hydra` for credential testing
+5. **WAF Detection** — Fingerprint WAF with `scan_waf` and `wafw00f` before injection testing
+6. **Injection Warfare** — 10 injection types across all discovered endpoints. Use `sqlmap` for SQLi exploitation, verify every finding with `test_endpoint`
+7. **Advanced Attacks** — HTTP smuggling, cache poisoning, deserialization, prototype pollution. Use `nuclei` for template-based detection
 8. **API, Business Logic & Specialized** — GraphQL, mass assignment, race conditions, cloud, file handling, OAuth, MFA bypass, WebSocket, subdomain takeover
-9. **Exploit Chain Analysis** — Automatic chain detection + manual verification with `test_chain`
+9. **Exploit Chain Analysis** — Automatic chain detection with `exploit_chain_suggest` + manual verification with `test_chain`
 10. **Reporting** — CVSS-scored findings with OWASP/PCI-DSS/NIST compliance mapping
+
+### Using External Tools
+
+The `run_security_tool` tool lets the agent execute any of the 116 allowlisted tools directly:
+
+```
+# Port scanning with nmap
+run_security_tool(session_id, "nmap", ["-sV", "-sC", "-p-", "target.com"])
+
+# SQL injection exploitation with sqlmap
+run_security_tool(session_id, "sqlmap", ["-u", "https://target.com/api?id=1", "--batch", "--dbs"])
+
+# Directory brute force with ffuf
+run_security_tool(session_id, "ffuf", ["-u", "https://target.com/FUZZ", "-w", "/usr/share/wordlists/dirb/common.txt"])
+
+# Brute force login with hydra
+run_security_tool(session_id, "hydra", ["-l", "admin", "-P", "passwords.txt", "target.com", "http-post-form", "/login:user=^USER^&pass=^PASS^:Invalid"])
+
+# Template-based vuln scanning with nuclei
+run_security_tool(session_id, "nuclei", ["-u", "https://target.com", "-severity", "critical,high"])
+
+# WAF detection with wafw00f
+run_security_tool(session_id, "wafw00f", ["https://target.com"])
+```
+
+Each tool execution returns structured output with intelligent `next_steps` based on the tool category — the agent knows what to do after nmap finds open ports, after sqlmap confirms injection, etc.
 
 ### Exploit Chain Analysis
 
@@ -485,28 +531,212 @@ pip install pencheff[full]
 - `websockets` — WebSocket security testing
 - `h2` — HTTP/2 support for httpx
 
-### System Tools (used if available)
+### System Tools
 
-Pencheff checks for and uses these tools when available. Modules gracefully degrade when they are missing.
+Pencheff checks for and uses these tools when available. Required Python packages are auto-installed. Optional Python packages and system tools enhance scanning capabilities — modules gracefully degrade when they are missing.
 
-| Tool | Purpose |
-|------|---------|
-| `dig` | DNS lookups |
-| `whois` | Domain registration info |
-| `openssl` | SSL/TLS testing |
-| `curl` | HTTP requests |
-| `nmap` | Enhanced port scanning |
-| `semgrep` | Static analysis |
-| `bandit` | Python security analysis |
-| `nuclei` | Template-based vulnerability scanning |
-| `sqlmap` | SQL injection testing |
-| `ffuf` | Web fuzzing |
-| `nikto` | Web server scanning |
-| `subfinder` | Subdomain enumeration (ProjectDiscovery) |
-| `interactsh-client` | Out-of-band callback detection |
-| `httpx-toolkit` | HTTP probing (ProjectDiscovery) |
-| `dalfox` | XSS scanner |
-| `gau` | URL discovery from web archives |
+## External Security Tools (116)
+
+All 116 tools below are allowlisted for execution via the `run_security_tool` MCP tool. Pencheff runs them with safe subprocess execution (no `shell=True`, array arguments only). Use `check_dependencies` to see which are installed on your system.
+
+### Network Scanning (10)
+
+| Tool | Description |
+|------|-------------|
+| `nmap` | Port scanning, service detection, NSE scripts, OS fingerprinting — the #1 network scanner |
+| `ipscan` | Angry IP Scanner — fast IP address and port scanning with host info |
+| `zenmap` | Nmap GUI — visual interpretation of scan results |
+| `fping` | Fast ICMP ping to multiple hosts simultaneously |
+| `unicornscan` | Asynchronous TCP/UDP scanner for large networks |
+| `netcat` | Port scanning, file transfer, reverse shells, banner grabbing |
+| `masscan` | Ultra-fast port scanning (100K+ ports/sec) — Internet-scale scanning |
+| `naabu` | Fast port scanner (ProjectDiscovery) — SYN/CONNECT scanning |
+| `nessus` | Tenable vulnerability scanner — comprehensive network security assessment |
+| `hping3` | Packet crafting and analysis — firewall testing, idle scanning |
+
+### Vulnerability Scanning (7)
+
+| Tool | Description |
+|------|-------------|
+| `openvas` | Open Vulnerability Assessment Scanner — comprehensive security assessments |
+| `gvm-cli` | Greenbone Vulnerability Management CLI — OpenVAS command-line interface |
+| `nuclei` | Template-based vulnerability scanning (10K+ templates) — ProjectDiscovery |
+| `nikto` | Web server scanner — 7000+ dangerous files, outdated software, misconfigs |
+| `skipfish` | Web app security recon — generates interactive sitemap with security checks |
+| `vega` | Web vulnerability scanner — SQLi, XSS, sensitive data exposure |
+
+### Password Cracking (9)
+
+| Tool | Description |
+|------|-------------|
+| `john` | John the Ripper — password cracker supporting 100s of hash types |
+| `hashcat` | GPU-accelerated password recovery — 300+ hash types, world's fastest cracker |
+| `rcrack` | RainbowCrack — hash cracker using precomputed rainbow tables |
+| `aircrack-ng` | WiFi security suite — WEP/WPA/WPA2 cracking, packet capture |
+| `hydra` | Network login brute-forcer — 50+ protocols (HTTP, SSH, FTP, MySQL, etc.) |
+| `medusa` | Parallel network login brute-forcer — fast credential testing |
+| `l0phtcrack` | Password auditing — dictionary, brute-force, rainbow table attacks |
+| `cowpatty` | WPA2-PSK brute-force cracking — weak passphrase detection |
+| `ophcrack` | Windows password cracker using rainbow tables |
+
+### Exploitation (10)
+
+| Tool | Description |
+|------|-------------|
+| `msfconsole` | Metasploit Framework — exploit development, post-exploitation, pivoting |
+| `msfvenom` | Metasploit payload generator — shellcode, executables, scripts |
+| `msfdb` | Metasploit database management |
+| `setoolkit` | Social-Engineer Toolkit — phishing, credential harvesting |
+| `beef-xss` | Browser Exploitation Framework — XSS attacks targeting browser sessions |
+| `sqlmap` | SQL injection — automatic exploitation, data extraction, OS shell access |
+| `armitage` | Graphical Metasploit frontend — target visualization, exploit recommendations |
+| `zap-cli` | OWASP ZAP CLI — automated web security scanning and testing |
+| `zaproxy` | OWASP Zed Attack Proxy — web app security scanner |
+| `commix` | Command injection exploiter — automated OS command injection |
+
+### Packet Sniffing & Spoofing (9)
+
+| Tool | Description |
+|------|-------------|
+| `tshark` | Wireshark CLI — deep packet inspection of 100s of protocols |
+| `tcpdump` | Command-line packet analyzer — capture and filter network traffic |
+| `ettercap` | Man-in-the-middle attack suite — ARP spoofing, DNS spoofing, sniffing |
+| `bettercap` | Network attack Swiss Army knife — WiFi, BLE, Ethernet MitM attacks |
+| `snort` | Intrusion detection/prevention system — rule-based packet analysis |
+| `ngrep` | Network grep — pattern-matching packet analyzer across protocols |
+| `nemesis` | Packet crafting and injection — custom protocol packets |
+| `scapy` | Interactive packet manipulation — craft, send, sniff, dissect packets |
+| `dsniff` | Password sniffer — network auditing and penetration testing |
+
+### Wireless Hacking (7)
+
+| Tool | Description |
+|------|-------------|
+| `wifite` | Automated wireless auditing — WEP/WPA/WPS attacks |
+| `kismet` | Wireless detector, sniffer, IDS — WiFi, Bluetooth, Zigbee, RF |
+| `reaver` | WPS brute-force attack — recover WPA/WPA2 passphrases |
+| `bully` | WPS brute-force (C-based) — improved performance over Reaver |
+| `wifiphisher` | Rogue AP framework — WiFi phishing, credential capture |
+| `hostapd-wpe` | Rogue RADIUS server for WPA2-Enterprise attacks |
+| `mdk4` | WiFi testing — beacon flooding, deauth, WDS confusion |
+
+### Directory / Path Brute Force (6)
+
+| Tool | Description |
+|------|-------------|
+| `ffuf` | Fast web fuzzer — directory brute force, parameter fuzzing, vhost discovery |
+| `gobuster` | Directory/DNS/vhost brute-force scanner — fast, Go-based |
+| `dirb` | Web content scanner — recursive directory brute force |
+| `wfuzz` | Web fuzzer — headers, POST data, URLs, authentication testing |
+| `feroxbuster` | Recursive content discovery — fast, smart wordlists, auto-filtering |
+| `dirsearch` | Web path brute-forcer with recursive scanning and extension support |
+
+### Web Application Hacking (5)
+
+| Tool | Description |
+|------|-------------|
+| `whatweb` | Web technology fingerprinting — CMS, frameworks, servers, plugins |
+| `wafw00f` | WAF fingerprinting and detection — identifies 100+ WAF products |
+| `wpscan` | WordPress vulnerability scanner — plugins, themes, users, passwords |
+| `dalfox` | XSS scanner with DOM analysis — parameter mining and payload optimization |
+| `xsstrike` | Advanced XSS detection — fuzzing, crawling, context analysis |
+
+### Subdomain Enumeration (7)
+
+| Tool | Description |
+|------|-------------|
+| `subfinder` | Passive subdomain discovery (ProjectDiscovery) — 30+ sources |
+| `amass` | OWASP attack surface mapping — active/passive subdomain enumeration |
+| `fierce` | DNS reconnaissance — subdomain brute-forcing and zone discovery |
+| `dnsrecon` | DNS enumeration — zone transfers, brute force, cache snooping |
+| `sublist3r` | Subdomain enumeration using search engines and public sources |
+| `knockpy` | Subdomain scanner with DNS resolution and takeover detection |
+| `dnsenum` | DNS enumeration — subdomains, MX, NS, zone transfer attempts |
+
+### DNS Tools (3)
+
+| Tool | Description |
+|------|-------------|
+| `dig` | DNS lookups — query DNS records with full control |
+| `whois` | Domain registration info — registrar, nameservers, dates |
+| `host` | Simple DNS lookup utility — forward and reverse lookups |
+
+### SSL/TLS Testing (4)
+
+| Tool | Description |
+|------|-------------|
+| `sslscan` | SSL/TLS scanner — cipher suites, protocols, certificate analysis |
+| `testssl` | Comprehensive SSL/TLS testing (testssl.sh) — BEAST, POODLE, Heartbleed |
+| `sslyze` | Fast SSL/TLS scanner — certificate validation, protocol support |
+| `openssl` | SSL/TLS cryptography toolkit — certificate management, testing |
+
+### OSINT / Social Engineering (9)
+
+| Tool | Description |
+|------|-------------|
+| `theHarvester` | OSINT — emails, subdomains, IPs from public sources |
+| `maltego` | OSINT and link analysis — data correlation across 100s of sources |
+| `recon-ng` | Web reconnaissance framework — modular OSINT collection |
+| `sherlock` | Username enumeration across 400+ social networks |
+| `spiderfoot` | Automated OSINT collection — 200+ data sources |
+| `gophish` | Phishing campaign toolkit — email phishing simulation |
+| `king-phisher` | Phishing simulation — credential harvesting, website cloning |
+| `evilginx2` | MitM framework — session cookie theft, 2FA bypass via reverse proxy |
+| `social-engineer-toolkit` | SET alias — social engineering attack framework |
+
+### Digital Forensics (8)
+
+| Tool | Description |
+|------|-------------|
+| `autopsy` | Digital forensics platform — disk image analysis |
+| `foremost` | File recovery/carving for forensic analysis |
+| `scalpel` | Fast file carver — improved version of Foremost |
+| `fls` | The Sleuth Kit — list files and directories in disk images |
+| `mmls` | The Sleuth Kit — display partition layout of volume systems |
+| `icat` | The Sleuth Kit — extract file content from disk images |
+| `volatility` | Memory forensics framework — RAM analysis, process dumping |
+| `binwalk` | Firmware analysis — extract embedded files and code |
+
+### Post-Exploitation / Credentials (10)
+
+| Tool | Description |
+|------|-------------|
+| `mimikatz` | Windows credential extraction — pass-the-hash, pass-the-ticket |
+| `crackmapexec` | Post-exploitation — SMB, LDAP, WinRM, MSSQL credential testing |
+| `impacket-secretsdump` | Impacket — dump NTLM hashes, Kerberos tickets from DC |
+| `impacket-psexec` | Impacket — remote command execution via SMB |
+| `impacket-smbexec` | Impacket — SMB-based remote execution |
+| `impacket-wmiexec` | Impacket — WMI-based remote execution |
+| `responder` | LLMNR/NBT-NS/MDNS poisoner — credential capture on LAN |
+| `enum4linux` | SMB/Windows enumeration — shares, users, groups, policies |
+| `smbclient` | SMB client — connect to file shares, list/download files |
+| `pcredz` | Credential extraction from PCAP files — 20+ protocols |
+
+### Web Proxy / API Testing (3)
+
+| Tool | Description |
+|------|-------------|
+| `curl` | HTTP requests — full protocol control, auth, proxies |
+| `wget` | HTTP downloader — recursive website mirroring |
+| `httpx-toolkit` | HTTP probing (ProjectDiscovery) — tech detection, status codes |
+
+### Static Analysis / Secret Scanning (4)
+
+| Tool | Description |
+|------|-------------|
+| `semgrep` | Static analysis — 5000+ rules across 30+ languages |
+| `bandit` | Python security analysis — find common security issues |
+| `trufflehog` | Secret scanning — git repos, S3 buckets, filesystem |
+| `git-dumper` | Extract git repositories from misconfigured web servers |
+
+### Miscellaneous (4)
+
+| Tool | Description |
+|------|-------------|
+| `interactsh-client` | Out-of-band callback detection (ProjectDiscovery) |
+| `gau` | URL discovery from web archives — AlienVault, Wayback, CommonCrawl |
+| `waybackurls` | Fetch URLs from Wayback Machine |
+| `xsser` | Cross-site scripting framework — automated XSS exploitation |
 
 ## Compliance Frameworks
 
