@@ -1,7 +1,7 @@
 {
   "name": "pencheff",
-  "version": "0.1.0",
-  "description": "The world's best AI ethical hacker — an elite penetration testing agent that thinks like a nation-state adversary. Performs exhaustive security assessments using advanced exploitation chains, creative bypass techniques, and deep business logic analysis. Covers OWASP Top 10, API security, authentication/authorization destruction, injection warfare, cloud exploitation, race conditions, and generates professional compliance-mapped reports with attack chain narratives.",
+  "version": "0.1.2",
+  "description": "Elite AI penetration tester that doesn't just scan — it HACKS. Verifies and exploits every finding, chains vulnerabilities into attack narratives, and proves impact with proof-of-concept demonstrations. 29 advanced tools: reconnaissance, WAF detection, injection testing, auth/authz attacks, HTTP smuggling, cache poisoning, deserialization, OAuth/OIDC exploitation, WebSocket attacks, MFA bypass, subdomain takeover. Manual hacking with test_endpoint between scans. Eliminates false positives. Focuses on exploitable vulnerabilities with verified PoCs.",
   "author": {
     "name": "Bala Sriharsha",
     "url": "https://github.com/balasriharsha"
@@ -12,6 +12,7 @@
     "penetration-testing",
     "pentest",
     "vulnerability",
+    "exploitation",
     "owasp",
     "sqli",
     "xss",
@@ -20,6 +21,19 @@
     "web-security",
     "jwt",
     "cors",
-    "cloud-security"
+    "cloud-security",
+    "http-smuggling",
+    "cache-poisoning",
+    "deserialization",
+    "prototype-pollution",
+    "oauth",
+    "mfa-bypass",
+    "websocket",
+    "subdomain-takeover",
+    "waf-bypass",
+    "race-condition",
+    "idor",
+    "privilege-escalation",
+    "proof-of-concept"
   ]
 }
